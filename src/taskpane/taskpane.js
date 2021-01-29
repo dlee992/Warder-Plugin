@@ -19,6 +19,7 @@ Office.onReady(info => {
     document.getElementById("create-table").onclick = createTable;
     document.getElementById("filter-table").onclick = filterTable;
     document.getElementById("sort-table").onclick = sortTable;
+    document.getElementById("warder-analysis").onclick = warderAnalysis;
 
     document.getElementById("sideload-msg").style.display = "none";
     document.getElementById("app-body").style.display = "flex";
@@ -29,7 +30,6 @@ Office.onReady(info => {
 
 function createTable() {
   Excel.run(function (context) {
-
     var currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
     var expensesTable = currentWorksheet.tables.add("A1:D1", true /* hasHeaders */);
     expensesTable.name = "ExpensesTable";
@@ -91,7 +91,51 @@ function sortTable() {
     
     expensesTable.sort.apply(sortFields);
 
-      return context.sync();
+    return context.sync();
+  })
+  .catch(function (error) {
+      console.log("Error: " + error);
+      if (error instanceof OfficeExtension.Error) {
+          console.log("Debug info: " + JSON.stringify(error.debugInfo));
+      }
+  });
+}
+
+function warderAnalysis() {
+  Excel.run(function (context) {
+    //mini test
+    //why console.log cannot be seen, it must be somewhere???
+
+    var currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+    var usedRange = currentWorksheet.getUsedRangeOrNullObject(false);
+    usedRange.load("cellCount");
+    await context.sync();
+    // if (usedRange.isNullObject) {
+    //   console.log("[E] worksheet is blank.");
+    // }
+
+    var logTable = currentWorksheet.tables.add("A10:B10", true /* hasHeaders */);
+    logTable.name = "LogTable";
+    logTable.getHeaderRowRange().values = [["log", "content"]];
+    logTable.rows.add(null /* add at the end */, [
+      [1, "range contains " + 0 + " cells"],
+      [2, 888],
+      [3, "range contains " + usedRange.cellCount + " cells"]
+    ]);
+    logTable.getRange().format.autofitColumns();
+    logTable.getRange().format.autofitRows();
+
+    //begin
+
+    //first stage
+
+    //second stage
+
+    //report
+
+    //end
+
+    return context.sync();
   })
   .catch(function (error) {
       console.log("Error: " + error);
