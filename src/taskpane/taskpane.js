@@ -62,15 +62,18 @@ function warderAnalysis() {
     console.log("mini test");
     var currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
     var logTable = currentWorksheet.tables.add("A10:B10", true /* hasHeaders */);
-    logTable.getHeaderRowRange().values = [["log", "content"]];
-
+    
     var usedRange = currentWorksheet.getUsedRange();
     usedRange.load("cellCount");
+    usedRange.load("address");
+    // usedRange.load("values");
     await context.sync();
-    
+
+    logTable.getHeaderRowRange().values = [["log", "content"]];
     logTable.rows.add(null /* add at the end */, [
       [1, "range contains " + 0 + " cells"],
-      [3, "range contains " + usedRange.cellCount + " cells"]
+      [2, "range contains " + usedRange.cellCount + " cells"],
+      [3, usedRange.address]
     ]);
 
     //begin
@@ -90,20 +93,5 @@ function warderAnalysis() {
     if (error instanceof OfficeExtension.Error) {
       console.log("Debug info: " + JSON.stringify(error.debugInfo));
     }
-  });
-}
-
-function getValues() {
-  Excel.run(async function (context) {
-    var sheet = context.workbook.worksheets.getActiveWorksheet();
-    var range = sheet.getRange("A2:D8");
-    range.load("cellCount");
-    range.load("values");
-
-    await context.sync();
-    console.log(JSON.stringify(range.values, null, 4));
-  })
-  .catch(function (error) {
-    //nothing
   });
 }
