@@ -8,7 +8,7 @@ import "../../assets/icon-16.png";
 import "../../assets/icon-32.png";
 import "../../assets/icon-80.png";
 
-/* global console, document, Excel, Office */
+/* global console, document, Excel, Office, OfficeExtension */
 
 Office.onReady(info => {
   if (info.host === Office.HostType.Excel) {
@@ -19,15 +19,15 @@ Office.onReady(info => {
     document.getElementById("create-table").onclick = createTable;
     document.getElementById("warder-analysis").onclick = warderAnalysis;
 
-    document.getElementById("sideload-msg").style.display = "none";
+    document.getElementById("sideloading-msg").style.display = "none";
     document.getElementById("app-body").style.display = "flex";
   }
-});
+}).then(r => console.log(r));
 
 function createTable() {
   Excel.run(function (context) {
-    var currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-    var expensesTable = currentWorksheet.tables.add("A1:D1", true /* hasHeaders */);
+    const currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+    const expensesTable = currentWorksheet.tables.add("A1:D1", true /* hasHeaders */);
     expensesTable.name = "ExpensesTable";
 
     expensesTable.getHeaderRowRange().values = [["Date", "Merchant", "Category", "Amount"]];
@@ -60,10 +60,10 @@ function warderAnalysis() {
     //mini test
     //why console.log cannot be seen, it must be somewhere???
     console.log("mini test");
-    var currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-    var logTable = currentWorksheet.tables.add("A10:B10", true /* hasHeaders */);
-    
-    var usedRange = currentWorksheet.getUsedRange();
+    const currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+    const logTable = currentWorksheet.tables.add("A10:B10", true /* hasHeaders */);
+
+    const usedRange = currentWorksheet.getUsedRange();
     usedRange.load("cellCount");
     usedRange.load("address");
     // usedRange.load("values");
