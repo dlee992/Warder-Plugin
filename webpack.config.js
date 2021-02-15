@@ -13,6 +13,9 @@ module.exports = async (env, options) => {
   const buildType = dev ? "dev" : "prod";
   const config = {
     devtool: "source-map",
+    node: {
+      fs: 'empty'
+    },
     entry: {
       polyfill: "@babel/polyfill",
       taskpane: "./src/taskpane/taskpane.js",

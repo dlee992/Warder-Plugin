@@ -8,13 +8,17 @@ import "../../assets/icon-16.png";
 import "../../assets/icon-32.png";
 import "../../assets/icon-80.png";
 
-/* global console, document, Excel, Office, OfficeExtension */
+/* global require, console, process, document, Excel, Office, OfficeExtension */
 
 Office.onReady(info => {
   if (info.host === Office.HostType.Excel) {
-    if (!Office.context.requirements.isSetSupported('ExcelApi', "1.7")) {
-      console.log('Sorry. The tutorial add-in uses Excel.js APIs that are not available in your version of Office.');
+    if (!Office.context.requirements.isSetSupported("ExcelApi", "1.7")) {
+      console.log("Sorry. The tutorial add-in uses Excel.js APIs that are not available in your version of Office.");
     }
+
+    //const fs = require("fs");
+    //var access = fs.createWriteStream("C:Users\\ocaml\\Codes\\Warder-Plugin\\.log");
+    //process.stdout.write = process.stderr.write = access.write.bind(access);
 
     document.getElementById("create-table").onclick = createTable;
     document.getElementById("warder-analysis").onclick = warderAnalysis;
@@ -22,10 +26,10 @@ Office.onReady(info => {
     document.getElementById("sideloading-msg").style.display = "none";
     document.getElementById("app-body").style.display = "flex";
   }
-}).then(r => console.log(r));
+});
 
 function createTable() {
-  Excel.run(function (context) {
+  Excel.run(function(context) {
     const currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
     const expensesTable = currentWorksheet.tables.add("A1:D1", true /* hasHeaders */);
     expensesTable.name = "ExpensesTable";
@@ -41,13 +45,12 @@ function createTable() {
       ["1/15/2017", "Best For You Organics Company", "Groceries", "97.88"]
     ]);
 
-    expensesTable.columns.getItemAt(3).getRange().numberFormat = [['\u20AC#,##0.00']];
+    expensesTable.columns.getItemAt(3).getRange().numberFormat = [["\u20AC#,##0.00"]];
     expensesTable.getRange().format.autofitColumns();
     expensesTable.getRange().format.autofitRows();
 
     return context.sync();
-  })
-  .catch(function (error) {
+  }).catch(function(error) {
     console.log("Error: " + error);
     if (error instanceof OfficeExtension.Error) {
       console.log("Debug info: " + JSON.stringify(error.debugInfo));
@@ -56,7 +59,7 @@ function createTable() {
 }
 
 function warderAnalysis() {
-  Excel.run(async function (context) {
+  Excel.run(async function(context) {
     //mini test
     //why console.log cannot be seen, it must be somewhere???
     console.log("mini test");
@@ -87,8 +90,7 @@ function warderAnalysis() {
     //end
 
     return context.sync();
-  })
-  .catch(function (error) {
+  }).catch(function(error) {
     console.log("Error: " + error);
     if (error instanceof OfficeExtension.Error) {
       console.log("Debug info: " + JSON.stringify(error.debugInfo));
