@@ -1,4 +1,4 @@
-# Office-Addin-TaskPane-JS
+# Warder-Plugin Development
 
 This repository contains the source code used by the [Yo Office generator](https://github.com/OfficeDev/generator-office) when you create a new Office Add-in that appears in the task pane. You can also use this repository as a sample to base your own project from if you choose not to use the generator. 
 
@@ -27,6 +27,6 @@ Questions about Microsoft Office 365 development in general should be posted to 
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information, see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
-## Copyright
-
-Copyright (c) 2019 Microsoft Corporation. All rights reserved.
+## Check localhost:port and kill this process
+    $ netstat -ano | findstr :<port>
+    $ taskkill /PID <pid> /F
