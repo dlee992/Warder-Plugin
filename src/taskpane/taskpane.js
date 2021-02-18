@@ -8,7 +8,7 @@ import "../../assets/icon-16.png";
 import "../../assets/icon-32.png";
 import "../../assets/icon-80.png";
 
-/* global require, console, process, document, Excel, Office, OfficeExtension */
+/* global console, document, Excel, Office, OfficeExtension */
 
 Office.onReady(info => {
   if (info.host === Office.HostType.Excel) {
@@ -30,6 +30,7 @@ Office.onReady(info => {
 
 function createTable() {
   Excel.run(function(context) {
+    console.log("create Table");
     const currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
     const expensesTable = currentWorksheet.tables.add("A1:D1", true /* hasHeaders */);
     expensesTable.name = "ExpensesTable";
@@ -62,9 +63,10 @@ function warderAnalysis() {
   Excel.run(async function(context) {
     //mini test
     //why console.log cannot be seen, it must be somewhere???
-    console.log("mini test");
+    console.log("warder analysis");
     const currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
     const logTable = currentWorksheet.tables.add("A10:B10", true /* hasHeaders */);
+    const s = "warder analysis";
 
     const usedRange = currentWorksheet.getUsedRange();
     usedRange.load("cellCount");
