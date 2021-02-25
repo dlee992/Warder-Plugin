@@ -61,27 +61,25 @@ function createTable() {
 
 function warderAnalysis() {
   Excel.run(async function(context) {
-    //mini test
     //why console.log cannot be seen, it must be somewhere???
     console.log("warder analysis");
+
+    // const logTable = currentWorksheet.tables.add("C20:D20", true /* hasHeaders */);
+    // logTable.getHeaderRowRange().values = [["log", "content"]];
+    // logTable.rows.add(null /* add at the end */, [
+      // [2, "range contains " + usedRange.cellCount + " cells"],
+      // [3, usedRange.address]
+    // ]);
+
+    //read all cells and filter by category
     const currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-    const logTable = currentWorksheet.tables.add("A10:B10", true /* hasHeaders */);
-    const s = "warder analysis";
 
     const usedRange = currentWorksheet.getUsedRange();
     usedRange.load("cellCount");
-    usedRange.load("address");
-    // usedRange.load("values");
+    usedRange.load("address");    
     await context.sync();
 
-    logTable.getHeaderRowRange().values = [["log", "content"]];
-    logTable.rows.add(null /* add at the end */, [
-      [1, "range contains " + 0 + " cells"],
-      [2, "range contains " + usedRange.cellCount + " cells"],
-      [3, usedRange.address]
-    ]);
-
-    //begin
+    
 
     //first stage
 
