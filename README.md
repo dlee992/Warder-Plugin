@@ -11,8 +11,12 @@ This template is written using JavaScript. For the [TypeScript](http://www.types
 This template supports debugging using any of the following techniques:
 
 - [Use a browser's developer tools](https://docs.microsoft.com/office/dev/add-ins/testing/debug-add-ins-in-office-online)
+  - can be used on mac without installing office apps
+  - [Publish task pane and content add-ins to a SharePoint app catalog](https://docs.microsoft.com/en-us/office/dev/add-ins/publish/publish-task-pane-and-content-add-ins-to-an-add-in-catalog)
 - [Attach a debugger from the task pane](https://docs.microsoft.com/office/dev/add-ins/testing/attach-debugger-from-task-pane)
+  - only can be used on Windows 10
 - [Use F12 developer tools on Windows 10](https://docs.microsoft.com/office/dev/add-ins/testing/debug-add-ins-using-f12-developer-tools-on-windows-10)
+  - only can be used on Windows 10 
 
 ## Questions and comments
 
