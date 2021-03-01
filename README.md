@@ -26,18 +26,20 @@ Questions about Microsoft Office 365 development in general should be posted to 
 
 ## Additional resources
 
-* [Office add-in documentation](https://docs.microsoft.com/office/dev/add-ins/overview/office-add-ins)
-* More Office Add-in samples at [OfficeDev on Github](https://github.com/officedev)
+- [Office add-in documentation](https://docs.microsoft.com/office/dev/add-ins/overview/office-add-ins)
+- More Office Add-in samples at [OfficeDev on Github](https://github.com/officedev)
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information, see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
 ## Check localhost:port and kill this process
-    $ netstat -ano | findstr :<port>
-    $ taskkill /PID <pid> /F
+
+    netstat -ano | findstr :<port>
+    taskkill /PID <pid> /F
 
 ## Run code on Mac OS
-    $ npm run dev-server //start the local web server
-    $ npm start          //test the add-in in Excel
-    $ npm run start:web  //test the add-in in Excel on a browser, 
+
+    npm run dev-server //start the local web server
+    npm start          //test the add-in in Excel
+    npm run start:web  //test the add-in in Excel on a browser, 
 
 Useful links: [sidelod office add-ins for testing on web](https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing)
