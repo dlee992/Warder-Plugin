@@ -60,36 +60,28 @@ function createTable() {
 }
 
 function warderAnalysis() {
-  Excel.run(async function(context) {
-    //why console.log cannot be seen, it must be somewhere???
-    console.log("warder analysis");
+  Excel.run(
+    async function(context) {
+      //why console.log cannot be seen, it must be somewhere???
+      console.log("warder analysis");
 
-    // const logTable = currentWorksheet.tables.add("C20:D20", true /* hasHeaders */);
-    // logTable.getHeaderRowRange().values = [["log", "content"]];
-    // logTable.rows.add(null /* add at the end */, [
-      // [2, "range contains " + usedRange.cellCount + " cells"],
-      // [3, usedRange.address]
-    // ]);
+      var currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+      var usedRange = currentWorksheet.getUsedRange();
+      usedRange.load();
+      await context.sync();
 
-    //read all cells and filter by category
-    const currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+      
 
-    const usedRange = currentWorksheet.getUsedRange();
-    usedRange.load("cellCount");
-    usedRange.load("address");    
-    await context.sync();
 
-    
+      //first stage
 
-    //first stage
+      //second stage
 
-    //second stage
+      //report
 
-    //report
+      //end
 
-    //end
-
-    return context.sync();
+      return context.sync();
   }).catch(function(error) {
     console.log("Error: " + error);
     if (error instanceof OfficeExtension.Error) {
