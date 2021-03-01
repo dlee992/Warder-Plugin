@@ -28,7 +28,7 @@ index.php
 *.vi
 *~
 *.sass-cache
-package-lock.json
+# package-lock.json
 
 # npm package
 *.tgz

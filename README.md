@@ -30,3 +30,8 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 ## Check localhost:port and kill this process
     $ netstat -ano | findstr :<port>
     $ taskkill /PID <pid> /F
+
+## Run code on Mac OS
+    $ npm run dev-server //start the local web server
+    $ npm start          //test the add-in in Excel
+    $ npm run start:web  //test the add-in in Excel on a browser
