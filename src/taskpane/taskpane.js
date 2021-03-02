@@ -69,6 +69,7 @@ function warderAnalysis() {
       var usedRange = currentWorksheet.getUsedRange();
       usedRange.load();
       await context.sync();
+      
 
       
 
