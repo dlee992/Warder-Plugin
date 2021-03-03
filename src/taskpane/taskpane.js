@@ -64,24 +64,32 @@ function createTable() {
 function warderAnalysis() {
   Excel.run(
     async function(context) {
-      //why console.log cannot be seen, it must be somewhere???
-      console.log("warder analysis");
 
-      var currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-      var usedRange = currentWorksheet.getUsedRange();
-      usedRange.load();
-      await context.sync();
+      
+      /* first step: filter out all kinds of cells, get all formula cells, and cluster them somehow
+      */
+      var currentWorksheet = context.workbook.worksheets.getActiveWorksheet()
+      var usedRange = currentWorksheet.getUsedRange()
+      usedRange.load()
+      usedRange.load("lastCell")
+      await context.sync()
 
-      //first stage
-      var foundRange = usedRange.find("=", {
-        completeMatch: false,
-        matchCase: false,
-        searchDirection: Excel.SearchDirection.forward
-      });
-      foundRange.load();
-      await context.sync();
-      foundRange.format.fill.color = "blue";
-      foundRange.format.font.color = "white";
+      //var cell = currentWorksheet.getCell(lastCell.rowIndex, lastCell.columnIndex)
+      var cell = currentWorksheet.getRange("F9")
+      //cell.values = [[ usedRange.lastCell.rowIndex ]]
+      cell.values = [[ 0 ]]
+      cell.format.autofitColumns()
+      //await context.sync()
+      //highlightCell(cell)
+      //await context.sync()
+
+      //const firstCell = usedRange.firstCell
+      //for (let rowIndex = firstCell.rowIndex; rowIndex <= lastCell.rowIndex; rowIndex++) {
+        //for (let colIndex = firstCell.columnIndex; colIndex <= lastCell.columnIndex; colIndex++) {
+          //highlightCell(currentWorksheet.getCell(rowIndex, colIndex))
+          //await context.sync()
+        //}
+      //}
 
       //second stage
 
@@ -96,4 +104,9 @@ function warderAnalysis() {
       console.log("Debug info: " + JSON.stringify(error.debugInfo));
     }
   });
+}
+
+function highlightCell(range) {
+  range.format.font.color = "white";
+  range.format.fill.color = "blue";
 }
