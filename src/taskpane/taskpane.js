@@ -79,8 +79,16 @@ function warderAnalysis() {
           var cell = currentWorksheet.getCell(rowIndex, colIndex)
           cell.load("formulas")
           await context.sync()
-          if (cell.formulas[0][0].indexOf('=') == 0) 
-            highlightCell(cell) 
+          var formula = cell.formulas[0][0]
+          if (typeof formula === "string" && formula.indexOf('=') == 0) {
+            highlightCell(cell, "blue") 
+          }
+          else if (typeof formula === "number") {
+            highlightCell(cell, "red")
+          }
+          else if (typeof formula === "string") {
+            highlightCell(cell, "purple")
+          }
         }
       }
 
@@ -99,10 +107,7 @@ function warderAnalysis() {
   });
 }
 
-function isFormula(context, cell) {
-}
-
-function highlightCell(range) {
+function highlightCell(range, color) {
   range.format.font.color = "white";
-  range.format.fill.color = "blue";
+  range.format.fill.color = color;
 }
