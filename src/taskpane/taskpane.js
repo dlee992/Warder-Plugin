@@ -65,31 +65,24 @@ function warderAnalysis() {
   Excel.run(
     async function(context) {
 
-      
       /* first step: filter out all kinds of cells, get all formula cells, and cluster them somehow
       */
       var currentWorksheet = context.workbook.worksheets.getActiveWorksheet()
       var usedRange = currentWorksheet.getUsedRange()
       usedRange.load()
-      usedRange.load("lastCell")
+      var lastCell = usedRange.getLastCell()
+      lastCell.load() 
       await context.sync()
 
-      //var cell = currentWorksheet.getCell(lastCell.rowIndex, lastCell.columnIndex)
-      var cell = currentWorksheet.getRange("F9")
-      //cell.values = [[ usedRange.lastCell.rowIndex ]]
-      cell.values = [[ 0 ]]
-      cell.format.autofitColumns()
-      //await context.sync()
-      //highlightCell(cell)
-      //await context.sync()
-
-      //const firstCell = usedRange.firstCell
-      //for (let rowIndex = firstCell.rowIndex; rowIndex <= lastCell.rowIndex; rowIndex++) {
-        //for (let colIndex = firstCell.columnIndex; colIndex <= lastCell.columnIndex; colIndex++) {
-          //highlightCell(currentWorksheet.getCell(rowIndex, colIndex))
-          //await context.sync()
-        //}
-      //}
+      for (let rowIndex = usedRange.rowIndex; rowIndex <= lastCell.rowIndex; rowIndex++) {
+        for (let colIndex = usedRange.columnIndex; colIndex <= lastCell.columnIndex; colIndex++) {
+          var cell = currentWorksheet.getCell(rowIndex, colIndex)
+          cell.load("formulas")
+          await context.sync()
+          if (cell.formulas[0][0].indexOf('=') == 0) 
+            highlightCell(cell) 
+        }
+      }
 
       //second stage
 
@@ -97,13 +90,16 @@ function warderAnalysis() {
 
       //end
 
-      return context.sync();
+      await context.sync();
   }).catch(function(error) {
     console.log("Error: " + error);
     if (error instanceof OfficeExtension.Error) {
       console.log("Debug info: " + JSON.stringify(error.debugInfo));
     }
   });
+}
+
+function isFormula(context, cell) {
 }
 
 function highlightCell(range) {

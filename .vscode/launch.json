@@ -10,6 +10,7 @@
             "name": "Launch Edge against localhost",
             "url": "http://localhost:8080",
             "webRoot": "${workspaceFolder}",
+            "trace": "verbose"
         },
         {
 	    "type": "office-addin",
@@ -19,7 +20,7 @@
 	    "trace": "verbose",
 	    "url": "https://localhost:3000/taskpane.html?_host_Info=Excel$Win32$16.01$en-US$$$$0",
 	    "webRoot": "${workspaceFolder}",
-	    "timeout": 45000
+	    "timeout": 45000,
 	    }
     ]
 }
