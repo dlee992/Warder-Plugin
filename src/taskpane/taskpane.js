@@ -3,12 +3,17 @@
  * See LICENSE in the project root for license information.
  */
 
+/*eslint no-undef: "error"*/
+/*eslint-env node*/
+
+//import { tokenize } from "excel-formula-tokenizer";
+
 // images references in the manifest
 import "../../assets/icon-16.png";
 import "../../assets/icon-32.png";
 import "../../assets/icon-80.png";
 
-/* global console, document, Excel, Office, OfficeExtension */
+/* global document, Excel, Office, OfficeExtension */
 
 Office.onReady(info => {
   if (info.host === Office.HostType.Excel) {
@@ -80,7 +85,7 @@ function warderAnalysis() {
       for (let rowIndex = usedRange.rowIndex; rowIndex <= lastCell.rowIndex; rowIndex++) {
         for (let colIndex = usedRange.columnIndex; colIndex <= lastCell.columnIndex; colIndex++) {
           var cell = worksheet.getCell(rowIndex, colIndex)
-          cell.load("formulas")
+          cell.load()
           await context.sync()
           var formula = cell.formulas[0][0]
           if (typeof formula === "string" && formula.indexOf('=') == 0) {
@@ -101,11 +106,21 @@ function warderAnalysis() {
         }
       }
 
-
-
       /* first cluster based on the two formula tree similarity
       */
-
+      //const {buildTree, visit} = require("excel-formula-ast")
+      const formulaStr = "SUM(1, 2)"
+      const tokens = tokenize(formulaStr)
+      //const tree = buildTree(tokens)
+      //const visitor = {
+        //enterFunction(functionNode) {
+          //console.log(`function is ${functionNode.name}`);
+        //},
+        //enterNumber(numberNode) {
+          //console.log(`number is ${numberNode.value}`)
+        //}
+      //}
+      //visit(tree, visitor)
 
       //second stage
 
@@ -115,7 +130,7 @@ function warderAnalysis() {
 
       //for testing aim
       var testCell = worksheet.getRange("F12")
-      testCell.values = [[formulas.length]]
+      testCell.values = [[formulas.length+1]]
 
       //final sync
       await context.sync();
