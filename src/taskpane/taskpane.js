@@ -6,7 +6,7 @@
 /*eslint no-undef: "error"*/
 /*eslint-env node*/
 
-//import { tokenize } from "excel-formula-tokenizer";
+import { tokenize } from "excel-formula-tokenizer";
 
 // images references in the manifest
 import "../../assets/icon-16.png";
@@ -106,19 +106,19 @@ function warderAnalysis() {
       */
       //
       //const tokenize = require("excel-formula-tokenizer")
-      //const {buildTree, visit} = require("excel-formula-ast")
-      //const formulaStr = "SUM(1, 2)"
-      //const tokens = tokenize(formulaStr)
-      //const tree = buildTree(tokens)
-      //const visitor = {
-        //enterFunction(functionNode) {
-          //console.log(`function is ${functionNode.name}`);
-        //},
-        //enterNumber(numberNode) {
-          //console.log(`number is ${numberNode.value}`)
-        //}
-      //}
-      //visit(tree, visitor)
+      const {buildTree, visit} = require("excel-formula-ast")
+      const formulaStr = "SUM(1, 2)"
+      const tokens = tokenize(formulaStr)
+      const tree = buildTree(tokens)
+      const visitor = {
+        enterFunction(functionNode) {
+          console.log(`function is ${functionNode.name}`);
+        },
+        enterNumber(numberNode) {
+          console.log(`number is ${numberNode.value}`)
+        }
+      }
+      visit(tree, visitor)
 
       //second stage
 
@@ -128,7 +128,7 @@ function warderAnalysis() {
 
       //for testing aim
       var testCell = worksheet.getRange("F12")
-      testCell.values = [[formulas.length+1]]
+      testCell.values = [[formulas.length+2]]
 
       //final sync
       await context.sync();
