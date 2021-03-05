@@ -21,10 +21,6 @@ Office.onReady(info => {
       console.log("Sorry. The tutorial add-in uses Excel.js APIs that are not available in your version of Office.");
     }
 
-    //const fs = require("fs");
-    //var access = fs.createWriteStream("C:Users\\ocaml\\Codes\\Warder-Plugin\\.log");
-    //process.stdout.write = process.stderr.write = access.write.bind(access);
-
     createTable();
     document.getElementById("create-table").onclick = createTable;
     document.getElementById("warder-analysis").onclick = warderAnalysis;
@@ -108,9 +104,11 @@ function warderAnalysis() {
 
       /* first cluster based on the two formula tree similarity
       */
+      //
+      //const tokenize = require("excel-formula-tokenizer")
       //const {buildTree, visit} = require("excel-formula-ast")
-      const formulaStr = "SUM(1, 2)"
-      const tokens = tokenize(formulaStr)
+      //const formulaStr = "SUM(1, 2)"
+      //const tokens = tokenize(formulaStr)
       //const tree = buildTree(tokens)
       //const visitor = {
         //enterFunction(functionNode) {
