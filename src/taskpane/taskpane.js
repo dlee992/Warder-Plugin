@@ -67,30 +67,45 @@ function warderAnalysis() {
 
       /* first step: filter out all kinds of cells, get all formula cells, and cluster them somehow
       */
-      var currentWorksheet = context.workbook.worksheets.getActiveWorksheet()
-      var usedRange = currentWorksheet.getUsedRange()
+      var worksheet = context.workbook.worksheets.getActiveWorksheet()
+      var usedRange = worksheet.getUsedRange()
       usedRange.load()
       var lastCell = usedRange.getLastCell()
       lastCell.load() 
       await context.sync()
 
+      var formulas = []
+      var numbers = []
+      var strings = []
       for (let rowIndex = usedRange.rowIndex; rowIndex <= lastCell.rowIndex; rowIndex++) {
         for (let colIndex = usedRange.columnIndex; colIndex <= lastCell.columnIndex; colIndex++) {
-          var cell = currentWorksheet.getCell(rowIndex, colIndex)
+          var cell = worksheet.getCell(rowIndex, colIndex)
           cell.load("formulas")
           await context.sync()
           var formula = cell.formulas[0][0]
           if (typeof formula === "string" && formula.indexOf('=') == 0) {
-            highlightCell(cell, "blue") 
+            highlightCell(cell, "blue") // formula cell 
+            formulas.push(cell)
           }
           else if (typeof formula === "number") {
-            highlightCell(cell, "red")
+            highlightCell(cell, "red") // number cell
+            numbers.push(cell)
           }
           else if (typeof formula === "string") {
-            highlightCell(cell, "purple")
+            highlightCell(cell, "purple") // string cell
+            strings.push(cell)
+          }
+          else {
+            // could be error cell, or anything else
           }
         }
       }
+
+
+
+      /* first cluster based on the two formula tree similarity
+      */
+
 
       //second stage
 
@@ -98,6 +113,11 @@ function warderAnalysis() {
 
       //end
 
+      //for testing aim
+      var testCell = worksheet.getRange("F12")
+      testCell.values = [[formulas.length]]
+
+      //final sync
       await context.sync();
   }).catch(function(error) {
     console.log("Error: " + error);
@@ -108,6 +128,6 @@ function warderAnalysis() {
 }
 
 function highlightCell(range, color) {
-  range.format.font.color = "white";
+  //range.format.font.color = "white";
   range.format.fill.color = color;
 }

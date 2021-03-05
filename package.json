@@ -27,7 +27,7 @@
     "watch": "webpack --mode development --watch"
   },
   "dependencies": {
-    "hot-formula-parser": "^4.0.0"
+    "excel-formula-parser": "^1.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.11.6",
