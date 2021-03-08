@@ -6,7 +6,8 @@
 /*eslint no-undef: "error"*/
 /*eslint-env node*/
 
-import { tokenize } from "excel-formula-tokenizer";
+import { tokenize } from "excel-formula-tokenizer"
+import { buildTree, visit } from "excel-formula-ast"
 
 // images references in the manifest
 import "../../assets/icon-16.png";
@@ -22,8 +23,11 @@ Office.onReady(info => {
     }
 
     createTable();
-    document.getElementById("create-table").onclick = createTable;
-    document.getElementById("warder-analysis").onclick = warderAnalysis;
+    document.getElementById("preprocess").onclick = preprocess;
+    document.getElementById("firststage").onclick = firststage;
+    document.getElementById("secondstage").onclick = secondstage;
+    document.getElementById("detection").onclick = detection;
+    document.getElementById("postprocess").onclick = postprocess;
 
     document.getElementById("sideloading-msg").style.display = "none";
     document.getElementById("app-body").style.display = "flex";
@@ -62,7 +66,12 @@ function createTable() {
   });
 }
 
-function warderAnalysis() {
+function highlightCell(range, color) {
+  //range.format.font.color = "white";
+  range.format.fill.color = color;
+}
+
+function preprocess() {
   Excel.run(
     async function(context) {
 
@@ -102,35 +111,6 @@ function warderAnalysis() {
         }
       }
 
-      /* first cluster based on the two formula tree similarity
-      */
-      //
-      //const tokenize = require("excel-formula-tokenizer")
-      const {buildTree, visit} = require("excel-formula-ast")
-      const formulaStr = "SUM(1, 2)"
-      const tokens = tokenize(formulaStr)
-      const tree = buildTree(tokens)
-      const visitor = {
-        enterFunction(functionNode) {
-          console.log(`function is ${functionNode.name}`);
-        },
-        enterNumber(numberNode) {
-          console.log(`number is ${numberNode.value}`)
-        }
-      }
-      visit(tree, visitor)
-
-      //second stage
-
-      //report
-
-      //end
-
-      //for testing aim
-      var testCell = worksheet.getRange("F12")
-      testCell.values = [[formulas.length+2]]
-
-      //final sync
       await context.sync();
   }).catch(function(error) {
     console.log("Error: " + error);
@@ -140,7 +120,42 @@ function warderAnalysis() {
   });
 }
 
-function highlightCell(range, color) {
-  //range.format.font.color = "white";
-  range.format.fill.color = color;
+function firststage() {
+  Excel.run(async function(context) {
+
+
+    await context.sync()
+  }).catch(function(error) {
+    console.log("Error: " + error)
+  })
+}
+
+function secondstage() {
+  Excel.run(async function(context) {
+
+
+    await context.sync()
+  }).catch(function(error) {
+    console.log("Error: " + error)
+  })
+}
+
+function detection() {
+  Excel.run(async function(context) {
+
+
+    await context.sync()
+  }).catch(function(error) {
+    console.log("Error: " + error)
+  })
+}
+
+function postprocess() {
+  Excel.run(async function(context) {
+
+
+    await context.sync()
+  }).catch(function(error) {
+    console.log("Error: " + error)
+  })
 }
