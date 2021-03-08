@@ -6,8 +6,6 @@
 /*eslint no-undef: "error"*/
 /*eslint-env node*/
 
-import { tokenize } from "excel-formula-tokenizer"
-import { buildTree, visit } from "excel-formula-ast"
 
 // images references in the manifest
 import "../../assets/icon-16.png";
@@ -21,8 +19,8 @@ Office.onReady(info => {
     if (!Office.context.requirements.isSetSupported("ExcelApi", "1.7")) {
       console.log("Sorry. The tutorial add-in uses Excel.js APIs that are not available in your version of Office.");
     }
-
-    createTable();
+    
+    document.getElementById("recreateTable").onclick = createTable;
     document.getElementById("preprocess").onclick = preprocess;
     document.getElementById("firststage").onclick = firststage;
     document.getElementById("secondstage").onclick = secondstage;
@@ -36,24 +34,25 @@ Office.onReady(info => {
 
 function createTable() {
   Excel.run(function(context) {
-    console.log("create Table");
     const currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+    const usedRange = currentWorksheet.getUsedRange()
+    usedRange.delete("Left")
+    //await context.sync()
+
     const expensesTable = currentWorksheet.tables.add("A1:E1", true /* hasHeaders */);
     expensesTable.name = "ExpensesTable";
 
-    expensesTable.getHeaderRowRange().values = [["Date", "Merchant", "Category", "Amount", "Ratio"]];
+    expensesTable.getHeaderRowRange().values = [["Date", "Merchant", "Amount", "Ratio", "Ratio2"]];
     expensesTable.rows.add(null /* add at the end */, [
-      ["1/1/2017", "The Phone Company", "Communications", "120", "=D2 * 2"],
-      ["1/2/2017", "Northwind Electric Cars", "Transportation", "142.33", "=D3 * 2"],
-      ["1/5/2017", "Best For You Organics Company", "Groceries", "27.9", "=D4 * 2"],
-      ["1/10/2017", "Coho Vineyard", "Restaurant", "33", "=D5 * 2"],
-      ["1/11/2017", "Bellows College", "Education", "350.1", "=D6 * 2"],
-      ["1/15/2017", "Trey Research", "Other", "135", "=D7 * 2"],
-      ["1/15/2017", "Best For You Organics Company", "Groceries", "97.88", "=D8 * 2"],
-      ["1/15/2017", "Best For You Organics Company", "Groceries", "97.88", "=D9 * 2"],
+      ["1/1/2017", "The Phone Company", "120", "240", "=D2 * 2"],
+      ["1/2/2017", "Northwind Electric Cars", "142.33", "=C3 * 2", "=D3 * 2"],
+      ["1/5/2017", "Best For You Organics Company", "27.9", "=C4 * 2", "=D4 * 2"],
+      ["1/10/2017", "Coho Vineyard", "33", "=C5 * 2", "=D5 * 2"],
+      ["1/11/2017", "Bellows College", "350.1", "=C6 * 2", "=D6 * 2"],
+      ["1/15/2017", "Trey Research", "135", "270", "=D7 * 2"],
+      ["1/15/2017", "Best For You Organics Company", "97.88", "=C8 * 2", "=D8 * 2"],
     ]);
 
-    expensesTable.columns.getItemAt(3).getRange().numberFormat = [["\u20AC#,##0.00"]];
     expensesTable.getRange().format.autofitColumns();
     expensesTable.getRange().format.autofitRows();
 
@@ -67,8 +66,8 @@ function createTable() {
 }
 
 function highlightCell(range, color) {
-  //range.format.font.color = "white";
-  range.format.fill.color = color;
+  range.format.font.color = color;
+  //range.format.fill.color = color;
 }
 
 var formulas = []
@@ -99,11 +98,11 @@ function preprocess() {
             formulas.push(cell)
           }
           else if (typeof formula === "number") {
-            highlightCell(cell, "red") // number cell
+            //highlightCell(cell, "red") // number cell
             numbers.push(cell)
           }
           else if (typeof formula === "string") {
-            highlightCell(cell, "purple") // string cell
+            //highlightCell(cell, "purple") // string cell
             strings.push(cell)
           }
           else {
@@ -123,11 +122,20 @@ function preprocess() {
 
 function firststage() {
   Excel.run(async function(context) {
-    
+
+    const {tokenize} = require("excel-formula-tokenizer")
+    const {buildTree} = require("excel-formula-ast")
+    const tree = buildTree(tokenize("= A1 * 1 + SUM(C1:F4)"))
+    const {visitNode} = require("./firstStage/ast-visit")
+    var ast = visitNode(tree)
+    console.log(JSON.stringify(ast))
 
     await context.sync()
   }).catch(function(error) {
     console.log("Error: " + error)
+    if (error instanceof OfficeExtension.Error) {
+      console.log("Debug info: " + JSON.stringify(error.debugInfo));
+    }
   })
 }
 
