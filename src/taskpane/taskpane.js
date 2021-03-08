@@ -71,6 +71,10 @@ function highlightCell(range, color) {
   range.format.fill.color = color;
 }
 
+var formulas = []
+var numbers = []
+var strings = []
+
 function preprocess() {
   Excel.run(
     async function(context) {
@@ -84,9 +88,6 @@ function preprocess() {
       lastCell.load() 
       await context.sync()
 
-      var formulas = []
-      var numbers = []
-      var strings = []
       for (let rowIndex = usedRange.rowIndex; rowIndex <= lastCell.rowIndex; rowIndex++) {
         for (let colIndex = usedRange.columnIndex; colIndex <= lastCell.columnIndex; colIndex++) {
           var cell = worksheet.getCell(rowIndex, colIndex)
@@ -122,7 +123,7 @@ function preprocess() {
 
 function firststage() {
   Excel.run(async function(context) {
-
+    
 
     await context.sync()
   }).catch(function(error) {
