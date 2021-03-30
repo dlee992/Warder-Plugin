@@ -15,3 +15,18 @@ Use online onedrive Excel, insert your add-in manifest.xml file, then can automa
     let user = {}
     alert( user?.address?.street)
 
+## Debug
+
+Office-js 使用 TS 的编译链，但我仍然使用许多 JS 的第三方库，很多库没有类型声明文件（dts），那么需要执行
+
+    dts-gen -m <module_name>
+
+然后在 tsconfig.json 文件里加上一个属性
+
+    "include": [
+        ...,
+        ...,
+        "<module_name>.d.ts",
+    ]
+
+很恼人啊！
