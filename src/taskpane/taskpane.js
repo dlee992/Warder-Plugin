@@ -153,11 +153,7 @@ function firststage() {
       // get cdt tree somehow 
     }
 
-  
     console.log("--- HAClustring: start ---")
-
-
-
     console.log("--- HAClustring: end ---")
 
     await context.sync().then(console.log("----- first stage : end -----"))
