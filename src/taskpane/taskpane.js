@@ -50,7 +50,7 @@ function createTable() {
       ["1/10/2017", "Coho Vineyard", "33", "=C5 * 2", "=D5 * 2"],
       ["1/11/2017", "Bellows College", "350.1", "=C6 * 2", "=D6 * 2"],
       ["1/15/2017", "Trey Research", "135", "270", "=D7 * 2"],
-      ["1/15/2017", "Best For You Organics Company", "97.88", "=C8 * 2", "=D8 * 2"],
+      //["1/15/2017", "Best For You Organics Company", "97.88", "=C8 * 2", "=D8 * 2"],
     ]);
 
     expensesTable.getRange().format.autofitColumns();
@@ -112,7 +112,7 @@ function firststage() {
     const {tokenize} = require("excel-formula-tokenizer")
     const {buildTree} = require("excel-formula-ast")
     const {buildAstTree, buildCdtTree, astSize} = require("./firstStage/tree-visit")
-
+    
     for (let rowIndex = usedRange.rowIndex; rowIndex <= lastCell.rowIndex; rowIndex++) {
       for (let colIndex = usedRange.columnIndex; colIndex <= lastCell.columnIndex; colIndex++) {
         var cell = worksheet.getCell(rowIndex, colIndex)
@@ -153,19 +153,7 @@ function firststage() {
       // get cdt tree somehow 
     }
 
-    var simMatrix = []
-    for (let index_i = 0; index_i < formulas.length; index_i++) {
-      var formula_cell_1 = formulas[index_i]
-      simMatrix[index_i] = []
-      for (let index_j = 0; index_j < formulas.length; index_j++) {
-        if (index_i == index_j) continue
-        var formula_cell_2 = formulas[index_j]
-        //
-        var red = 0
-        simMatrix[index_i][index_j] = 1 - red/(astSize(formula_cell_1.syntax_tree) + astSize(formula_cell_2.syntax_tree))
-      }
-    }
-    
+  
     console.log("--- HAClustring: start ---")
 
 

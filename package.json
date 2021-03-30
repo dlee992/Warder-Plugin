@@ -27,12 +27,9 @@
     "watch": "webpack --mode development --watch"
   },
   "dependencies": {
-    "clusterfck": "^1.0.0",
     "edit-distance": "^1.0.4",
-    "excel-formula-parser": "^1.0.3",
-    "fast-formula-parser": "^1.0.19",
-    "hierarchical-clustering": "^1.1.0",
-    "jqgram": "^0.2.5"
+    "excel-formula-ast": "^1.1.1",
+    "excel-formula-tokenizer": "^2.3.1"
   },
   "devDependencies": {
     "@babel/core": "^7.11.6",
