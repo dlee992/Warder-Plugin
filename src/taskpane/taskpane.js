@@ -44,13 +44,13 @@ function createTable() {
 
     expensesTable.getHeaderRowRange().values = [["Date", "Merchant", "Amount", "Ratio", "Ratio2"]];
     expensesTable.rows.add(null /* add at the end */, [
-      ["1/1/2017", "The Phone Company", "120", "240", "=D2 * 2"],
-      ["1/2/2017", "Northwind Electric Cars", "142.33", "=C3 * 2", "=D3 * 2"],
-      ["1/5/2017", "Best For You Organics Company", "27.9", "=C4 * 2", "=D4 * 2"],
-      ["1/10/2017", "Coho Vineyard", "33", "=C5 * 2", "=D5 * 2"],
-      ["1/11/2017", "Bellows College", "350.1", "=C6 * 2", "=D6 * 2"],
-      ["1/15/2017", "Trey Research", "135", "270", "=D7 * 2"],
-      //["1/15/2017", "Best For You Organics Company", "97.88", "=C8 * 2", "=D8 * 2"],
+      ["1/1/2017", "The Phone Company", "120", "240", "= SUM(C2:D2)"],
+      ["1/2/2017", "Northwind Electric Cars", "142.33", "=C3 * 2", "= SUM(C3:D3)"],
+      ["1/5/2017", "Best For You Organics Company", "27.9", "=C4 * 2", "= SUM(C4:D4)"],
+      ["1/10/2017", "Coho Vineyard", "33", "=C5 * 2", "= SUM(C5:D5)"],
+      ["1/11/2017", "Bellows College", "350.1", "=C6 * 2", "= SUM(C6:D6)"],
+      ["1/15/2017", "Trey Research", "135", "270", "= SUM(C7:D7)"],
+      //["1/15/2017", "Best For You Organics Company", "97.88", "=C8 * 2", "= SUM(C8:D8)"],
     ]);
 
     expensesTable.getRange().format.autofitColumns();
@@ -152,6 +152,33 @@ function firststage() {
       var formula_cell_2 = formulas[index]
       // get cdt tree somehow 
     }
+
+    var ed = require('edit-distance');
+    // Define cost functions.
+    var insert, remove, update
+    insert = remove = function(node) { return 1; }
+    update = function(nodeA, nodeB) { return nodeA.id !== nodeB.id ? 1 : 0; }
+    var children = function(node) { return node.children; }
+
+    var simMatrix = new Array(formulas.length)
+    for (let j = 0; j < formulas.length; j++) {
+      simMatrix[j] = new Array(formulas.length)
+    }
+
+    for (let i = 0; i < formulas.length; i++) {
+      var cell_i = formulas[i]
+      simMatrix[i] = new Array(formulas.length)
+      for (let j = i+1; j < formulas.length; j++) {
+        var cell_j = formulas[j]
+        
+        var ted = ed.ted(cell_i.astString, cell_j.astString, children, insert, remove, update)
+        const dis = 1 - (ted.distance / (astSize(cell_i.syntax_tree) + astSize(cell_j.syntax_tree)))
+        simMatrix[i][j] = simMatrix[j][i] = dis
+        console.log("--- ted --- ", cell_i.astString, cell_j.astString, ted.distance, dis)
+      }
+    }
+
+
 
     console.log("--- HAClustring: start ---")
     console.log("--- HAClustring: end ---")

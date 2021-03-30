@@ -18,5 +18,9 @@
         "dist",
         "lib",
         "lib-amd"
+    ],
+    "include": [
+        "edit-distance.d.ts",
     ]
+
 }
