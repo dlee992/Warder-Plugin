@@ -1,7 +1,42 @@
 
-module.exports = {visitNode}
+module.exports = {buildAstTree, buildCdtTree, astSize, cdtSize}
 
-function visitNode(node) {
+
+function cdtSize() {
+
+}
+
+function buildCdtTree() {
+
+}
+
+
+function astSize(node) {
+  switch (node.type) {
+    case 'cell':
+      return 1
+    case 'cell-range':
+      return 1 + astSize(node.left) + astSize(node.right)
+    case 'function':
+      var sum = 1
+      node.arguments.forEach(arg => {
+        sum += astSize(arg)
+      })
+      return sum
+    case 'number':
+      return 1 
+    case 'text':
+      return 1
+    case 'logical':
+      return 1
+    case 'binary-expression':
+      return 1 + astSize(node.left) + astSize(node.right)
+    case 'unary-expression':
+      return 1 + astSize(node.operand)
+  } 
+}
+
+function buildAstTree(node) {
   switch (node.type) {
     case 'cell':
       return visitCell(node)
@@ -29,15 +64,15 @@ function visitCell(node) {
 function visitCellRange(node) {
     var ast = {id: node.type}
     ast.children = []
-    ast.children.push(visitNode(node.left))
-    ast.children.push(visitNode(node.right))
+    ast.children.push(buildAstTree(node.left))
+    ast.children.push(buildAstTree(node.right))
     return ast
 }
 
 function visitFunction(node) {
     var ast = {id: node.name}
     ast.children = []
-    node.arguments.forEach(arg => ast.children.push(visitNode(arg)))
+    node.arguments.forEach(arg => ast.children.push(buildAstTree(arg)))
     return ast
 }
 
@@ -56,14 +91,14 @@ function visitLogical(node) {
 function visitBinaryExpression(node) {
     var ast = {id: node.operator}
     ast.children = []
-    ast.children.push(visitNode(node.left))
-    ast.children.push(visitNode(node.right))
+    ast.children.push(buildAstTree(node.left))
+    ast.children.push(buildAstTree(node.right))
     return ast
 }
 
 function visitUnaryExpression(node) {
     var ast = {id: node.operator}
     ast.children = []
-    ast.children.push(visitNode(node.operand))
+    ast.children.push(buildAstTree(node.operand))
     return ast
 }

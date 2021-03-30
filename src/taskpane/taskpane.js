@@ -56,7 +56,7 @@ function createTable() {
     expensesTable.getRange().format.autofitColumns();
     expensesTable.getRange().format.autofitRows();
 
-    return context.sync();
+    return context.sync().then(console.log("----- Create Table : done -----"));
   }).catch(function(error) {
     console.log("Error: " + error);
     if (error instanceof OfficeExtension.Error) {
@@ -70,48 +70,10 @@ function highlightCell(range, color) {
   //range.format.fill.color = color;
 }
 
-var formulas = []
-var numbers = []
-var strings = []
-
 function preprocess() {
   Excel.run(
     async function(context) {
-
-      /* first step: filter out all kinds of cells, get all formula cells, and cluster them somehow
-      */
-      var worksheet = context.workbook.worksheets.getActiveWorksheet()
-      var usedRange = worksheet.getUsedRange()
-      usedRange.load()
-      var lastCell = usedRange.getLastCell()
-      lastCell.load() 
-      await context.sync()
-
-      for (let rowIndex = usedRange.rowIndex; rowIndex <= lastCell.rowIndex; rowIndex++) {
-        for (let colIndex = usedRange.columnIndex; colIndex <= lastCell.columnIndex; colIndex++) {
-          var cell = worksheet.getCell(rowIndex, colIndex)
-          cell.load()
-          await context.sync()
-          var formula = cell.formulas[0][0]
-          if (typeof formula === "string" && formula.indexOf('=') == 0) {
-            highlightCell(cell, "blue") // formula cell 
-            formulas.push(cell)
-          }
-          else if (typeof formula === "number") {
-            //highlightCell(cell, "red") // number cell
-            numbers.push(cell)
-          }
-          else if (typeof formula === "string") {
-            //highlightCell(cell, "purple") // string cell
-            strings.push(cell)
-          }
-          else {
-            // could be error cell, or anything else
-          }
-        }
-      }
-
-      await context.sync();
+    await context.sync();
   }).catch(function(error) {
     console.log("Error: " + error);
     if (error instanceof OfficeExtension.Error) {
@@ -120,17 +82,97 @@ function preprocess() {
   });
 }
 
+class MyCell {
+  constructor(excel_cell, syntax_tree, astString) {
+    this.excel_cell = excel_cell
+    this.syntax_tree = syntax_tree
+    this.astString = astString
+  }
+
+}
+
+
 function firststage() {
   Excel.run(async function(context) {
+    console.log("----- first stage : start -----")
+
+    /* first step: filter out all kinds of cells, get all formula cells, and cluster them somehow
+    */
+    var worksheet = context.workbook.worksheets.getActiveWorksheet()
+    var usedRange = worksheet.getUsedRange()
+    usedRange.load()
+    var lastCell = usedRange.getLastCell()
+    lastCell.load() 
+    await context.sync()
+
+    var formulas = []
+    var numbers = []
+    var strings = []
 
     const {tokenize} = require("excel-formula-tokenizer")
     const {buildTree} = require("excel-formula-ast")
-    const tree = buildTree(tokenize("= A1 * 1 + SUM(C1:F4)"))
-    const {visitNode} = require("./firstStage/ast-visit")
-    var ast = visitNode(tree)
-    console.log(JSON.stringify(ast))
+    const {buildAstTree, buildCdtTree, astSize} = require("./firstStage/tree-visit")
 
-    await context.sync()
+    for (let rowIndex = usedRange.rowIndex; rowIndex <= lastCell.rowIndex; rowIndex++) {
+      for (let colIndex = usedRange.columnIndex; colIndex <= lastCell.columnIndex; colIndex++) {
+        var cell = worksheet.getCell(rowIndex, colIndex)
+        cell.load()
+        
+        await context.sync()
+        var formula = cell.formulasR1C1[0][0]
+        if (typeof formula === "string" && formula.indexOf('=') == 0) {
+          //console.log("--- find a formula cell ---") 
+          const syntax_tree = buildTree(tokenize(formula))
+          
+          //console.log("--- build ast tree ---") 
+          const astString = buildAstTree(syntax_tree)
+          //console.log(JSON.stringify(ast))
+          
+          //console.log("--- get tree size --- " + astSize(syntax_tree))
+          
+          formulas.push(new MyCell(cell, syntax_tree, astString))
+
+          console.log("--- push a formula ---")
+        }
+        else if (typeof formula === "number") {
+          //highlightCell(cell, "red") // number cell
+          numbers.push(cell)
+        }
+        else if (typeof formula === "string") {
+          //highlightCell(cell, "purple") // string cell
+          strings.push(cell)
+        }
+        else {
+          // could be error cell, or anything else
+        }
+      }
+    }
+
+    for (let index = 0; index < formulas.length; index++) {
+      var formula_cell_2 = formulas[index]
+      // get cdt tree somehow 
+    }
+
+    var simMatrix = []
+    for (let index_i = 0; index_i < formulas.length; index_i++) {
+      var formula_cell_1 = formulas[index_i]
+      simMatrix[index_i] = []
+      for (let index_j = 0; index_j < formulas.length; index_j++) {
+        if (index_i == index_j) continue
+        var formula_cell_2 = formulas[index_j]
+        //
+        var red = 0
+        simMatrix[index_i][index_j] = 1 - red/(astSize(formula_cell_1.syntax_tree) + astSize(formula_cell_2.syntax_tree))
+      }
+    }
+    
+    console.log("--- HAClustring: start ---")
+
+
+
+    console.log("--- HAClustring: end ---")
+
+    await context.sync().then(console.log("----- first stage : end -----"))
   }).catch(function(error) {
     console.log("Error: " + error)
     if (error instanceof OfficeExtension.Error) {
