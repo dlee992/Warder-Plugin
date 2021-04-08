@@ -83,14 +83,23 @@ function preprocess() {
 }
 
 class MyCell {
-  constructor(excel_cell, syntax_tree, astString) {
+  constructor(excel_cell, syntax_tree, astString, index) {
     this.excel_cell = excel_cell
     this.syntax_tree = syntax_tree
     this.astString = astString
+    this.index = index
   }
-
 }
 
+class FirstCluster {
+  constructor(myCell) {
+    this.firstCell = myCell
+    this.myCellSet = new Set()
+    this.myCellSet.add(myCell)
+  }
+}
+
+var colors = ["yellow", "blue", "red", "green", "grey", "orange"]
 
 function firststage() {
   Excel.run(async function(context) {
@@ -112,7 +121,7 @@ function firststage() {
     const {tokenize} = require("excel-formula-tokenizer")
     const {buildTree} = require("excel-formula-ast")
     const {buildAstTree, buildCdtTree, astSize} = require("./firstStage/tree-visit")
-    
+   
     for (let rowIndex = usedRange.rowIndex; rowIndex <= lastCell.rowIndex; rowIndex++) {
       for (let colIndex = usedRange.columnIndex; colIndex <= lastCell.columnIndex; colIndex++) {
         var cell = worksheet.getCell(rowIndex, colIndex)
@@ -130,8 +139,8 @@ function firststage() {
           //console.log(JSON.stringify(ast))
           
           //console.log("--- get tree size --- " + astSize(syntax_tree))
-          
-          formulas.push(new MyCell(cell, syntax_tree, astString))
+        
+          formulas.push(new MyCell(cell, syntax_tree, astString, formulas.length))
 
           console.log("--- push a formula ---")
         }
@@ -154,7 +163,7 @@ function firststage() {
       // get cdt tree somehow 
     }
 
-    var ed = require('edit-distance');
+    var ed = require('edit-distance')
     // Define cost functions.
     var insert, remove, update
     insert = remove = function(node) { return 1; }
@@ -168,21 +177,87 @@ function firststage() {
 
     for (let i = 0; i < formulas.length; i++) {
       var cell_i = formulas[i]
-      simMatrix[i] = new Array(formulas.length)
+      
       for (let j = i+1; j < formulas.length; j++) {
         var cell_j = formulas[j]
-        
         var ted = ed.ted(cell_i.astString, cell_j.astString, children, insert, remove, update)
-        const dis = 1 - (ted.distance / (astSize(cell_i.syntax_tree) + astSize(cell_j.syntax_tree)))
-        simMatrix[i][j] = simMatrix[j][i] = dis
-        console.log("--- ted --- ", cell_i.astString, cell_j.astString, ted.distance, dis)
+        const sim = 1 - (ted.distance / (astSize(cell_i.syntax_tree) + astSize(cell_j.syntax_tree)))
+        simMatrix[i][j] = simMatrix[j][i] = sim
+        //console.log("--- ted --- ", cell_i.excel_cell.address, cell_j.excel_cell.address, sim)
       }
     }
 
+    console.log("  --- HAClustring: start ---")
+    /**
+     * todo: nearest neighbor chain algorithm
+     * Set of active clusters, one for each input point
+     * Stack, empty
+     * while (halting condition): 
+     *    if Stack empty, push any cluster into Stack
+     *    C = top of Stack
+     *    exist D = nearest other cluster of C
+     *    if push D into S
+     *    otherwise, D in stack, must be father of C, pop C and D, merge them
+     **/
+    var firstClusterSet = new Set()
+    var stack = []
+    for (let index = 0; index < formulas.length; index++) {
+      const myCell = formulas[index]
+      var firstCluster = new FirstCluster(myCell)
+      firstClusterSet.add(firstCluster)
+      if (index == 0) 
+        stack.push(firstCluster)  
+    }
 
+    while (firstClusterSet.size > 1) {
+      if (stack.length == 0) stack.push(firstClusterSet.values().next().value)
 
-    console.log("--- HAClustring: start ---")
-    console.log("--- HAClustring: end ---")
+      var currentCluster = stack.pop()
+      var minimumDistance = Number.MAX_SAFE_INTEGER
+      var pairCluster = undefined
+      for (const cluster of firstClusterSet) {
+        if (cluster === currentCluster) continue
+        var dis = 0
+        for (const cellInCluster of cluster.myCellSet) {
+          for (const cellInCurrentCluster of currentCluster.myCellSet) {
+            dis += (1 - simMatrix[cellInCluster.index][cellInCurrentCluster.index])
+          }
+        }
+        dis = dis / (cluster.myCellSet.size * currentCluster.myCellSet.size)
+        if (dis < minimumDistance) {
+          minimumDistance = dis
+          pairCluster = cluster
+          console.log("minimumDistance:", dis)
+        }
+      }
+
+      if (stack.indexOf(pairCluster) == -1) {
+        stack.push(currentCluster)
+        stack.push(pairCluster)
+      } else {
+        if (minimumDistance > 0.02) break 
+        stack.pop()
+        //debugging
+        for (const myCell of currentCluster.myCellSet) {
+          console.log("merged cells in currentCluster:", myCell.excel_cell.address)
+        }
+        for (const myCell of pairCluster.myCellSet) {
+          console.log("merging cells in pairCluster:", myCell.excel_cell.address)
+          currentCluster.myCellSet.add(myCell)
+        }
+        firstClusterSet.delete(pairCluster)
+      }
+    }
+
+    var index = 0
+    for (const cluster of firstClusterSet) {
+      for (const myCell of cluster.myCellSet) {
+        highlightCell(myCell.excel_cell, colors[index % colors.length])
+      }
+      index++
+    }
+
+    console.log("  --- HAClustring: end ---")
 
     await context.sync().then(console.log("----- first stage : end -----"))
   }).catch(function(error) {
