@@ -1,15 +1,15 @@
 /*eslint no-undef: "error"*/
 /*eslint-env node*/
 
-import { getHttpsServerOptions } from "office-addin-dev-certs";
-import { CleanWebpackPlugin } from "clean-webpack-plugin";
-import CopyWebpackPlugin from "copy-webpack-plugin";
-import HtmlWebpackPlugin from "html-webpack-plugin";
+const devCerts = require("office-addin-dev-certs");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 const urlDev="https://localhost:3000/";
 const urlProd="https://www.contoso.com/"; // CHANGE THIS TO YOUR PRODUCTION DEPLOYMENT LOCATION
 
-export default async (env, options) => {
+module.exports = async (env, options) => {
   const dev = options.mode === "development";
   const buildType = dev ? "dev" : "prod";
   const config = {
@@ -86,7 +86,7 @@ export default async (env, options) => {
       headers: {
         "Access-Control-Allow-Origin": "*"
       },      
-      https: (options.https !== undefined) ? options.https : await getHttpsServerOptions(),
+      https: (options.https !== undefined) ? options.https : await devCerts.getHttpsServerOptions(),
       port: process.env.npm_package_config_dev_server_port || 3000
     }
   };

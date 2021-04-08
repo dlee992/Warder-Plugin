@@ -121,6 +121,7 @@ function firststage() {
         await context.sync()
         var formula = cell.formulasR1C1[0][0]
         if (typeof formula === "string" && formula.indexOf('=') == 0) {
+          highlightCell(cell, "red")
           //console.log("--- find a formula cell ---") 
           const syntax_tree = buildTree(tokenize(formula))
           
