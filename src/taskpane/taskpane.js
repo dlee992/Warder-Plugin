@@ -85,11 +85,14 @@ function preprocess() {
 }
 
 class CellWrapper {
-  constructor(excel_cell, syntax_tree, astString, index) {
+  constructor(excel_cell, syntax_tree, astString, index, cellType) {
     this.excel_cell = excel_cell
     this.syntax_tree = syntax_tree
     this.astString = astString
     this.index = index
+    this.cellType = cellType
+    this.cellAddressRowStr = "Row" + excel_cell.rowIndex
+    this.cellAddressColumnStr = "Column" + excel_cell.columnIndex
   }
 }
 
@@ -106,6 +109,7 @@ var colors = ["yellow", "blue", "red", "green", "grey", "orange", "purple"]
 var formulaCells = []
 var numberCells = []
 var stringCells = []
+var otherCells = []
 var firstClusterSet = new Set()
 var finalFirstClusters = new Set()
 
@@ -143,17 +147,18 @@ function firststage() {
 
           const syntax_tree = buildTree(tokenize(formula))
           const astString = buildAstTree(syntax_tree)
-          formulaCells.push(new CellWrapper(cell, syntax_tree, astString, formulaCells.length))
+          formulaCells.push(
+            new CellWrapper(cell, syntax_tree, astString, formulaCells.length, "formula"))
           console.log("--- push a formula ---")
         }
         else if (typeof formula === "number") {
-          numberCells.push(new CellWrapper(cell, undefined, undefined, numberCells.length))
+          numberCells.push(new CellWrapper(cell, undefined, undefined, numberCells.length, "number"))
         }
         else if (typeof formula === "string") {
-          stringCells.push(new CellWrapper(cell, undefined, undefined, stringCells.length))
+          stringCells.push(new CellWrapper(cell, undefined, undefined, stringCells.length, "string"))
         }
         else {
-          // could be error cell, or anything else
+          otherCells.push(new CellWrapper(cell, undefined, undefined, otherCells.length, "other"))
         }
       }
     }
@@ -290,8 +295,8 @@ function firststage() {
   })
 }
 
-var {extractFeature} = require("./secondStage/extractFeature")
-var {constructCellAndClusterMatrix} = require("./secondStage/handleMatrix")
+var {FeatureExtraction} = require("./secondStage/FeatureExtraction")
+var {constructCellAndClusterMatrix} = require("./secondStage/MatrixConstruction")
 
 function secondstage() {
   Excel.run(async function(context) {
@@ -299,8 +304,8 @@ function secondstage() {
      * feature extraction
      * include: cell address(x), label(x), alliance(x), table(x), cell array membership(x), gap template(x)
      */
-    extractFeature(finalFirstClusters, formulaCells, numberCells, stringCells)
-    var cellAndClusterMatrix = constructCellAndClusterMatrix(finalFirstClusters, formulaCells, numberCells)
+    var featureExtract = new FeatureExtraction(finalFirstClusters, formulaCells, numberCells, stringCells)
+    var cellAndClusterMatrix = new MatrixConstruction(finalFirstClusters, formulaCells, numberCells)
     
     /**
      * absort other cells into clusters
