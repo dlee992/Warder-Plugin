@@ -103,9 +103,9 @@ class FirstCluster {
 
 var colors = ["yellow", "blue", "red", "green", "grey", "orange", "purple"]
 
-var formulas = []
-var numbers = []
-var strings = []
+var formulaCells = []
+var numberCells = []
+var stringCells = []
 var firstClusterSet = new Set()
 var finalFirstClusters = new Set()
 
@@ -117,9 +117,9 @@ function firststage() {
   Excel.run(async function(context) {
     console.log("----- first stage : start -----")
 
-    formulas = []
-    numbers = []
-    strings = []
+    formulaCells = []
+    numberCells = []
+    stringCells = []
     firstClusterSet = new Set()
     finalFirstClusters = new Set()
 
@@ -140,27 +140,17 @@ function firststage() {
         await context.sync()
         var formula = cell.formulasR1C1[0][0]
         if (typeof formula === "string" && formula.indexOf('=') == 0) {
-          //highlightCell(cell, "red")
-          //console.log("--- find a formula cell ---") 
-          const syntax_tree = buildTree(tokenize(formula))
-          
-          //console.log("--- build ast tree ---") 
-          const astString = buildAstTree(syntax_tree)
-          //console.log(JSON.stringify(ast))
-          
-          //console.log("--- get tree size --- " + astSize(syntax_tree))
-        
-          formulas.push(new CellWrapper(cell, syntax_tree, astString, formulas.length))
 
+          const syntax_tree = buildTree(tokenize(formula))
+          const astString = buildAstTree(syntax_tree)
+          formulaCells.push(new CellWrapper(cell, syntax_tree, astString, formulaCells.length))
           console.log("--- push a formula ---")
         }
         else if (typeof formula === "number") {
-          //highlightCell(cell, "red") // number cell
-          numbers.push(cell)
+          numberCells.push(new CellWrapper(cell, undefined, undefined, numberCells.length))
         }
         else if (typeof formula === "string") {
-          //highlightCell(cell, "purple") // string cell
-          strings.push(cell)
+          stringCells.push(new CellWrapper(cell, undefined, undefined, stringCells.length))
         }
         else {
           // could be error cell, or anything else
@@ -168,8 +158,8 @@ function firststage() {
       }
     }
 
-    for (let index = 0; index < formulas.length; index++) {
-      var formula_cell_2 = formulas[index]
+    for (let index = 0; index < formulaCells.length; index++) {
+      var formula_cell_2 = formulaCells[index]
       // get cdt tree somehow 
     }
 
@@ -180,16 +170,16 @@ function firststage() {
     update = function(nodeA, nodeB) { return nodeA.id !== nodeB.id ? 1 : 0; }
     var children = function(node) { return node.children; }
 
-    var simMatrix = new Array(formulas.length)
-    for (let j = 0; j < formulas.length; j++) {
-      simMatrix[j] = new Array(formulas.length)
+    var simMatrix = new Array(formulaCells.length)
+    for (let j = 0; j < formulaCells.length; j++) {
+      simMatrix[j] = new Array(formulaCells.length)
     }
 
-    for (let i = 0; i < formulas.length; i++) {
-      var cell_i = formulas[i]
+    for (let i = 0; i < formulaCells.length; i++) {
+      var cell_i = formulaCells[i]
       
-      for (let j = i+1; j < formulas.length; j++) {
-        var cell_j = formulas[j]
+      for (let j = i+1; j < formulaCells.length; j++) {
+        var cell_j = formulaCells[j]
         var ted = ed.ted(cell_i.astString, cell_j.astString, children, insert, remove, update)
         const sim = 1 - (ted.distance / (astSize(cell_i.syntax_tree) + astSize(cell_j.syntax_tree)))
         simMatrix[i][j] = simMatrix[j][i] = sim
@@ -211,8 +201,8 @@ function firststage() {
      **/
     
     var stack = []
-    for (let index = 0; index < formulas.length; index++) {
-      const myCell = formulas[index]
+    for (let index = 0; index < formulaCells.length; index++) {
+      const myCell = formulaCells[index]
       var firstCluster = new FirstCluster(myCell)
       firstClusterSet.add(firstCluster)
       if (index == 0) 
@@ -300,16 +290,18 @@ function firststage() {
   })
 }
 
+var {extractFeature} = require("./secondStage/extractFeature")
+var {constructCellAndClusterMatrix} = require("./secondStage/handleMatrix")
+
 function secondstage() {
   Excel.run(async function(context) {
     /**
      * feature extraction
-     *    features include: cell address(x), label(x), layout(x), alliance(x), table(x), cell array membership(x), gap template(x)
+     * include: cell address(x), label(x), alliance(x), table(x), cell array membership(x), gap template(x)
      */
+    extractFeature(finalFirstClusters, formulaCells, numberCells, stringCells)
+    var cellAndClusterMatrix = constructCellAndClusterMatrix(finalFirstClusters, formulaCells, numberCells)
     
-    
-
-
     /**
      * absort other cells into clusters
      */
