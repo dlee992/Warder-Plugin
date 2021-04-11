@@ -44,17 +44,19 @@ function createTable() {
 
     expensesTable.getHeaderRowRange().values = [["Date", "Merchant", "Amount", "Ratio", "Ratio2"]];
     expensesTable.rows.add(null /* add at the end */, [
-      ["1/1/2017", "The Phone Company", "120", "240", "= SUM(C2:D2)"],
-      ["1/2/2017", "Northwind Electric Cars", "142.33", "=C3 * 2", "= SUM(C3:D3)"],
-      ["1/5/2017", "Best For You Organics Company", "27.9", "=C4 * 2", "= SUM(C4:D4)"],
+      ["1/1/2017", "Phone Company", "120", "240", "= SUM(C2:D2)"],
+      ["1/2/2017", "Electric Cars", "142.33", "=C3 * 2", "= SUM(C3:D3)"],
+      ["1/5/2017", "Organics Company", "27.9", "=C4 * 2", "= SUM(C4:D4)"],
       ["1/10/2017", "Coho Vineyard", "33", "=C5 * 2", "= SUM(C5:D5)"],
       ["1/11/2017", "Bellows College", "350.1", "=C6 * 2", "= SUM(C6:D6)"],
       ["1/15/2017", "Trey Research", "135", "270", "= SUM(C7:D7)"],
       //["1/15/2017", "Best For You Organics Company", "97.88", "=C8 * 2", "= SUM(C8:D8)"],
     ]);
 
-    expensesTable.getRange().format.autofitColumns();
-    expensesTable.getRange().format.autofitRows();
+    //expensesTable.getRange().format.autofitColumns();
+    //expensesTable.getRange().format.autofitRows()
+    expensesTable.getRange().format.rowHeight = 20
+    expensesTable.getRange().format.columnWidth = 100
 
     return context.sync().then(console.log("----- Create Table : done -----"));
   }).catch(function(error) {
@@ -65,7 +67,7 @@ function createTable() {
   });
 }
 
-function highlightCell(range, color) {
+function setFontColor(range, color) {
   range.format.font.color = color;
   //range.format.fill.color = color;
 }
@@ -82,7 +84,7 @@ function preprocess() {
   });
 }
 
-class MyCell {
+class CellWrapper {
   constructor(excel_cell, syntax_tree, astString, index) {
     this.excel_cell = excel_cell
     this.syntax_tree = syntax_tree
@@ -99,11 +101,27 @@ class FirstCluster {
   }
 }
 
-var colors = ["yellow", "blue", "red", "green", "grey", "orange"]
+var colors = ["yellow", "blue", "red", "green", "grey", "orange", "purple"]
+
+var formulas = []
+var numbers = []
+var strings = []
+var firstClusterSet = new Set()
+var finalFirstClusters = new Set()
+
+const {tokenize} = require("excel-formula-tokenizer")
+const {buildTree} = require("excel-formula-ast")
+const {buildAstTree, buildCdtTree, astSize} = require("./firstStage/tree-visit")
 
 function firststage() {
   Excel.run(async function(context) {
     console.log("----- first stage : start -----")
+
+    formulas = []
+    numbers = []
+    strings = []
+    firstClusterSet = new Set()
+    finalFirstClusters = new Set()
 
     /* first step: filter out all kinds of cells, get all formula cells, and cluster them somehow
     */
@@ -114,14 +132,6 @@ function firststage() {
     lastCell.load() 
     await context.sync()
 
-    var formulas = []
-    var numbers = []
-    var strings = []
-
-    const {tokenize} = require("excel-formula-tokenizer")
-    const {buildTree} = require("excel-formula-ast")
-    const {buildAstTree, buildCdtTree, astSize} = require("./firstStage/tree-visit")
-   
     for (let rowIndex = usedRange.rowIndex; rowIndex <= lastCell.rowIndex; rowIndex++) {
       for (let colIndex = usedRange.columnIndex; colIndex <= lastCell.columnIndex; colIndex++) {
         var cell = worksheet.getCell(rowIndex, colIndex)
@@ -130,7 +140,7 @@ function firststage() {
         await context.sync()
         var formula = cell.formulasR1C1[0][0]
         if (typeof formula === "string" && formula.indexOf('=') == 0) {
-          highlightCell(cell, "red")
+          //highlightCell(cell, "red")
           //console.log("--- find a formula cell ---") 
           const syntax_tree = buildTree(tokenize(formula))
           
@@ -140,7 +150,7 @@ function firststage() {
           
           //console.log("--- get tree size --- " + astSize(syntax_tree))
         
-          formulas.push(new MyCell(cell, syntax_tree, astString, formulas.length))
+          formulas.push(new CellWrapper(cell, syntax_tree, astString, formulas.length))
 
           console.log("--- push a formula ---")
         }
@@ -199,7 +209,7 @@ function firststage() {
      *    if push D into S
      *    otherwise, D in stack, must be father of C, pop C and D, merge them
      **/
-    var firstClusterSet = new Set()
+    
     var stack = []
     for (let index = 0; index < formulas.length; index++) {
       const myCell = formulas[index]
@@ -209,8 +219,11 @@ function firststage() {
         stack.push(firstCluster)  
     }
 
-    while (firstClusterSet.size > 1) {
-      if (stack.length == 0) stack.push(firstClusterSet.values().next().value)
+    while (true) {
+      if (stack.length == 0) {
+        if (firstClusterSet.size == 0) break
+        stack.push(firstClusterSet.values().next().value)
+      } 
 
       var currentCluster = stack.pop()
       var minimumDistance = Number.MAX_SAFE_INTEGER
@@ -228,31 +241,50 @@ function firststage() {
           minimumDistance = dis
           pairCluster = cluster
           console.log("minimumDistance:", dis)
+          var cells = []
+          for (const myCell of pairCluster.myCellSet) {
+            cells.push(myCell.excel_cell.address)
+          }
+          console.log("current cluster:", cells)
         }
       }
 
       if (stack.indexOf(pairCluster) == -1) {
         stack.push(currentCluster)
         stack.push(pairCluster)
+
       } else {
-        if (minimumDistance > 0.02) break 
         stack.pop()
-        //debugging
-        for (const myCell of currentCluster.myCellSet) {
-          console.log("merged cells in currentCluster:", myCell.excel_cell.address)
+        if (minimumDistance > 0.02) {
+          firstClusterSet.delete(currentCluster)
+          firstClusterSet.delete(pairCluster)
+          finalFirstClusters.add(currentCluster)
+          finalFirstClusters.add(pairCluster)
+          continue
         }
+        //debugging
+        var cells = []
+        for (const myCell of currentCluster.myCellSet) {
+          cells.push(myCell.excel_cell.address)
+        }
+        console.log("pair cluster:", cells)
+
+        cells = []
         for (const myCell of pairCluster.myCellSet) {
-          console.log("merging cells in pairCluster:", myCell.excel_cell.address)
+          cells.push(myCell.excel_cell.address)
           currentCluster.myCellSet.add(myCell)
         }
+        console.log("current cluster:", cells)
+
         firstClusterSet.delete(pairCluster)
       }
     }
 
     var index = 0
-    for (const cluster of firstClusterSet) {
+    for (const cluster of finalFirstClusters) {
+      if (cluster.myCellSet.size == 1) continue
       for (const myCell of cluster.myCellSet) {
-        highlightCell(myCell.excel_cell, colors[index % colors.length])
+        setFontColor(myCell.excel_cell, colors[index % colors.length])
       }
       index++
     }
@@ -270,6 +302,24 @@ function firststage() {
 
 function secondstage() {
   Excel.run(async function(context) {
+    /**
+     * feature extraction
+     *    features include: cell address(x), label(x), layout(x), alliance(x), table(x), cell array membership(x), gap template(x)
+     */
+    
+    
+
+
+    /**
+     * absort other cells into clusters
+     */
+
+    
+    /**
+     * filter out cells in clusters
+     */
+
+
 
 
     await context.sync()
@@ -280,7 +330,14 @@ function secondstage() {
 
 function detection() {
   Excel.run(async function(context) {
+    /**
+     * feature extraction
+     */
 
+
+    /**
+     * identify defects in each cluster
+     */ 
 
     await context.sync()
   }).catch(function(error) {
