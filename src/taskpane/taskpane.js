@@ -20,12 +20,12 @@ Office.onReady(info => {
       console.log("Sorry. The tutorial add-in uses Excel.js APIs that are not available in your version of Office.");
     }
     
-    document.getElementById("recreateTable").onclick = createTable;
-    document.getElementById("preprocess").onclick = preprocess;
+    // document.getElementById("recreateTable").onclick = createTable;
+    // document.getElementById("preprocess").onclick = preprocess;
     document.getElementById("firststage").onclick = firststage;
     document.getElementById("secondstage").onclick = secondstage;
     document.getElementById("detection").onclick = detection;
-    document.getElementById("postprocess").onclick = postprocess;
+    // document.getElementById("postprocess").onclick = postprocess;
 
     document.getElementById("sideloading-msg").style.display = "none";
     document.getElementById("app-body").style.display = "flex";
@@ -84,17 +84,7 @@ function preprocess() {
   });
 }
 
-class CellWrapper {
-  constructor(excel_cell, syntax_tree, astString, index, cellType) {
-    this.excel_cell = excel_cell
-    this.syntax_tree = syntax_tree
-    this.astString = astString
-    this.index = index
-    this.cellType = cellType
-    this.ft_cellAddressRow = "Row" + excel_cell.rowIndex
-    this.ft_cellAddressColumn = "Column" + excel_cell.columnIndex
-  }
-}
+const {CellWrapper} = require("./entity/CellWrapper")
 
 class FirstCluster {
   constructor(myCell) {
@@ -112,12 +102,15 @@ var columnBase
 var formulaCells = []
 var numberCells = []
 var stringCells = []
+var emptyCells = []
 var firstClusterSet = new Set()
 var finalFirstClusters = new Set()
 
 const {tokenize} = require("excel-formula-tokenizer")
 const {buildTree} = require("excel-formula-ast")
-const {buildAstTree, buildCdtTree, astSize} = require("./firstStage/tree-visit")
+const {TreeVisitor} = require("./firstStage/TreeVisitor")
+
+var treeVisitor = new TreeVisitor()
 
 function firststage() {
   Excel.run(async function(context) {
@@ -148,7 +141,7 @@ function firststage() {
 
       for (let colIndex = usedRange.columnIndex; colIndex <= lastCell.columnIndex; colIndex++) {
         // to be optimzed: cell can be empty, then no need to call context.sync()
-        if (usedRangeFormulas[rowIndex - rowBase][colIndex - columnBase] == "") continue
+        //if (usedRangeFormulas[rowIndex - rowBase][colIndex - columnBase] == "") continue
 
         var cell = worksheet.getCell(rowIndex, colIndex)
         cell.load()
@@ -156,17 +149,21 @@ function firststage() {
 
         var formula = cell.formulasR1C1[0][0]
         var cellWrapper
+        
         if (formula == "") {
-          //console.log("empty cell", rowIndex, colIndex, formula)
+          cellWrapper = new CellWrapper(cell, undefined, undefined, emptyCells.length, "empty")
+          emptyCells.push(cellWrapper)
+          sheetWrapper[rowIndex - rowBase][colIndex - columnBase] = cellWrapper
         }
         else if (typeof formula === "string" && formula.indexOf('=') == 0) {
 
           const syntax_tree = buildTree(tokenize(formula))
-          const astString = buildAstTree(syntax_tree)
+          const astString = treeVisitor.buildAstTree(syntax_tree)
           cellWrapper = new CellWrapper(cell, syntax_tree, astString, formulaCells.length, "formula")
           formulaCells.push(cellWrapper)
           sheetWrapper[rowIndex - rowBase][colIndex - columnBase] = cellWrapper
           //console.log(formula)
+          
         }
         else if (typeof formula === "number") {
           cellWrapper = new CellWrapper(cell, undefined, undefined, numberCells.length, "number")
@@ -183,8 +180,15 @@ function firststage() {
         }
       }
     }
+    treeVisitor.setSheetWrapper(sheetWrapper, rowBase, columnBase)
 
-    /*
+    // get all referenced cells for each formula cell
+    for (let index = 0; index < formulaCells.length; index++) {
+      const cellWrapper = formulaCells[index]
+      treeVisitor.computeReferenceSet(cellWrapper)
+    }
+    
+    //todo: second development
     for (let index = 0; index < formulaCells.length; index++) {
       var formula_cell_2 = formulaCells[index]
       // get cdt tree somehow 
@@ -208,14 +212,14 @@ function firststage() {
       for (let j = i+1; j < formulaCells.length; j++) {
         var cell_j = formulaCells[j]
         var ted = ed.ted(cell_i.astString, cell_j.astString, children, insert, remove, update)
-        const sim = 1 - (ted.distance / (astSize(cell_i.syntax_tree) + astSize(cell_j.syntax_tree)))
+        const sim = 1 - (ted.distance / (treeVisitor.astSize(cell_i.syntax_tree) + treeVisitor.astSize(cell_j.syntax_tree)))
         simMatrix[i][j] = simMatrix[j][i] = sim
         //console.log("--- ted --- ", cell_i.excel_cell.address, cell_j.excel_cell.address, sim)
       }
     }
 
     console.log("  --- HAClustring: start ---")
-    */
+    
     /**
      * todo: nearest neighbor chain algorithm
      * Set of active clusters, one for each input point
@@ -327,13 +331,12 @@ function secondstage() {
   Excel.run(async function(context) {
     console.log("----- second stage -----")
     /**
-     * feature extraction
-     * include: cell address(x), label(x), alliance(x), table(x), cell array membership(x), gap template(x)
+     * feature extraction & matrix construction
      */
-    
+
     var featureExtract = new FeatureExtraction(sheetWrapper, rowBase, columnBase, finalFirstClusters, formulaCells, numberCells, stringCells)
     var cellAndClusterMatrix = new MatrixConstruction(finalFirstClusters, formulaCells, numberCells)
-    
+
     /**
      * absort other cells into clusters
      */
@@ -346,7 +349,7 @@ function secondstage() {
 
 
 
-    await context.sync(.then(console.log("----- second stage : end -----")))
+    await context.sync().then(console.log("----- second stage : end -----"))
   }).catch(function(error) {
     console.log("Error: " + error)
   })

@@ -1,4 +1,3 @@
-
 export class FeatureExtraction {
   constructor(sheetWrapper, rowBase, columnBase, finalFirstClusters, formulaCells, numberCells, stringCells) {
     this.sheetWrapper = sheetWrapper
@@ -9,17 +8,20 @@ export class FeatureExtraction {
     this.numberCells = numberCells
     this.stringCells = stringCells
 
-    //this.extractCellAddress()
+    this.tableSet = new Set()
+
+    this.extractCellAddress()
 
     this.extractTable()
+    for (const table of this.tableSet) console.log(table.toString())
+
     this.extractLabel()
 
-    this.extractAlliance()
+    //this.extractAlliance() // wait for second development
 
     this.extractCellArray()
 
-    this.extractGapTemplate()
-
+    //this.extractGapTemplate() // wait for second development
   }
 
   /**
@@ -28,6 +30,8 @@ export class FeatureExtraction {
    */
   extractCellAddress() {
     // nothing to do, implement in class CellWrapper
+    console.log("  --- extract cell address: start ---")
+    console.log("  --- extract cell address: end ---")
   }
 
   /**
@@ -39,7 +43,7 @@ export class FeatureExtraction {
     for (let rowIndex = 0; rowIndex < this.sheetWrapper.length; rowIndex++) {
       for (let colIndex = 0; colIndex < this.sheetWrapper[rowIndex].length; colIndex++) {
         var cellWrapper = this.sheetWrapper[rowIndex][colIndex]
-        if (cellWrapper == undefined || cellWrapper.cellType == "string") continue
+        if (cellWrapper.cellType == "empty" || cellWrapper.cellType == "string") continue
         //console.log(rowIndex, colIndex)
 
         //find left header in the same row
@@ -48,7 +52,7 @@ export class FeatureExtraction {
         var copyRow = false //rewrite: "var copyRow". First time, copyRow is undefined, second time, it is defined!!! 
         while (colIndex >= minus) {
           var headerCellWrapper = this.sheetWrapper[rowIndex][colIndex - minus]
-          if (headerCellWrapper == undefined) {
+          if (headerCellWrapper.cellType == "empty") {
             if (labelRow !== "") break
             minus++
             continue
@@ -77,7 +81,7 @@ export class FeatureExtraction {
         var copyColumn = false
         while (rowIndex >= minus) {
           var headerCellWrapper = this.sheetWrapper[rowIndex - minus][colIndex]
-          if (headerCellWrapper == undefined) {
+          if (headerCellWrapper.cellType == "empty") {
             if (labelColumn !== "") break
             minus++
             continue
@@ -98,7 +102,7 @@ export class FeatureExtraction {
         if (copyColumn == false) 
           cellWrapper.ft_labelColumn = labelColumn
         //console.log("go 5")
-        //console.log(cellWrapper.ft_labelRow, cellWrapper.ft_labelColumn)
+        console.log(cellWrapper.excel_cell.address, cellWrapper.ft_labelRow, cellWrapper.ft_labelColumn)
       }
     }
 
@@ -136,9 +140,12 @@ export class FeatureExtraction {
 
     for (let rowIndex = 0; rowIndex < this.sheetWrapper.length; rowIndex++) {
       for (let colIndex = 0; colIndex < this.sheetWrapper[rowIndex].length; colIndex++) {
-        if (this.sheetWrapper[rowIndex][colIndex] == undefined || visitedCells[rowIndex][colIndex] == true) continue
-        //console.log(rowIndex, colIndex)
         var cellWrapper = this.sheetWrapper[rowIndex][colIndex]
+
+        //two sub-conditions can be combined with cellWrapper?.cellType == "string" ???
+        if (cellWrapper.cellType == "empty" || cellWrapper.cellType == "string" || visitedCells[rowIndex][colIndex] == true) continue
+        //console.log(rowIndex, colIndex)
+        
         
         var table = new Table(colIndex, rowIndex, colIndex, rowIndex)
         //console.log(table.toString())
@@ -162,7 +169,7 @@ export class FeatureExtraction {
             //console.log("go 1")
             if (visitedCells[newRowIndex][newColIndex] == true) continue
             //console.log("go 2")
-            if (this.sheetWrapper[newRowIndex][newColIndex] !== undefined) {
+            if (this.sheetWrapper[newRowIndex][newColIndex].cellType !== "empty") {
               //console.log("go 3")
               queue.push(this.sheetWrapper[newRowIndex][newColIndex])
               visitedCells[newRowIndex][newColIndex] = true
@@ -182,6 +189,8 @@ export class FeatureExtraction {
         table.bottom += this.rowBase
         table.left += this.columnBase
         table.right += this.columnBase
+
+        this.tableSet.add(table)
       }
       
     }
@@ -194,6 +203,7 @@ export class FeatureExtraction {
           //console.log(cellWrapper.excel_cell.address, cellWrapper.ft_table.toString())
       //}
     //}
+
 
     console.log("  --- extract table: end ---")    
   }
