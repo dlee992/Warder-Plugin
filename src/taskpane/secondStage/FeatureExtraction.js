@@ -212,7 +212,7 @@ export class FeatureExtraction {
    * cell array is amcheck's cell array
    */
   extractCellArray() {
-
+    
   }
 
   /**
