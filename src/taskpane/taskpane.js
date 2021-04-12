@@ -106,10 +106,12 @@ class FirstCluster {
 
 var colors = ["yellow", "blue", "red", "green", "grey", "orange", "purple"]
 
+var sheetWrapper = []
+var rowBase
+var columnBase
 var formulaCells = []
 var numberCells = []
 var stringCells = []
-var otherCells = []
 var firstClusterSet = new Set()
 var finalFirstClusters = new Set()
 
@@ -136,33 +138,48 @@ function firststage() {
     lastCell.load() 
     await context.sync()
 
+    sheetWrapper = new Array(lastCell.rowIndex - usedRange.rowIndex + 1)
+    rowBase = usedRange.rowIndex
+    columnBase = usedRange.columnIndex
+    
     for (let rowIndex = usedRange.rowIndex; rowIndex <= lastCell.rowIndex; rowIndex++) {
+      sheetWrapper[rowIndex - usedRange.rowIndex] = new Array(lastCell.columnIndex - usedRange.columnIndex + 1)
+
       for (let colIndex = usedRange.columnIndex; colIndex <= lastCell.columnIndex; colIndex++) {
         var cell = worksheet.getCell(rowIndex, colIndex)
         cell.load()
-        
         await context.sync()
+
         var formula = cell.formulasR1C1[0][0]
-        if (typeof formula === "string" && formula.indexOf('=') == 0) {
+        var cellWrapper
+        if (formula == "") {
+          //console.log("empty cell", rowIndex, colIndex, formula)
+        }
+        else if (typeof formula === "string" && formula.indexOf('=') == 0) {
 
           const syntax_tree = buildTree(tokenize(formula))
           const astString = buildAstTree(syntax_tree)
-          formulaCells.push(
-            new CellWrapper(cell, syntax_tree, astString, formulaCells.length, "formula"))
-          console.log("--- push a formula ---")
+          cellWrapper = new CellWrapper(cell, syntax_tree, astString, formulaCells.length, "formula")
+          formulaCells.push(cellWrapper)
+          sheetWrapper[rowIndex - rowBase][colIndex - columnBase] = cellWrapper
+          //console.log(formula)
         }
         else if (typeof formula === "number") {
-          numberCells.push(new CellWrapper(cell, undefined, undefined, numberCells.length, "number"))
+          cellWrapper = new CellWrapper(cell, undefined, undefined, numberCells.length, "number")
+          numberCells.push(cellWrapper)
+          sheetWrapper[rowIndex - rowBase][colIndex - columnBase] = cellWrapper 
+          //console.log(formula)
         }
         else if (typeof formula === "string") {
-          stringCells.push(new CellWrapper(cell, undefined, undefined, stringCells.length, "string"))
-        }
-        else {
-          otherCells.push(new CellWrapper(cell, undefined, undefined, otherCells.length, "other"))
+          cellWrapper = new CellWrapper(cell, undefined, undefined, stringCells.length, "string")
+          stringCells.push(cellWrapper)
+          sheetWrapper[rowIndex - rowBase][colIndex - columnBase] = cellWrapper
+          //console.log(formula)
         }
       }
     }
 
+    /*
     for (let index = 0; index < formulaCells.length; index++) {
       var formula_cell_2 = formulaCells[index]
       // get cdt tree somehow 
@@ -193,6 +210,7 @@ function firststage() {
     }
 
     console.log("  --- HAClustring: start ---")
+    */
     /**
      * todo: nearest neighbor chain algorithm
      * Set of active clusters, one for each input point
@@ -205,6 +223,7 @@ function firststage() {
      *    otherwise, D in stack, must be father of C, pop C and D, merge them
      **/
     
+    /*
     var stack = []
     for (let index = 0; index < formulaCells.length; index++) {
       const myCell = formulaCells[index]
@@ -285,6 +304,7 @@ function firststage() {
     }
 
     console.log("  --- HAClustring: end ---")
+    */
 
     await context.sync().then(console.log("----- first stage : end -----"))
   }).catch(function(error) {
@@ -300,11 +320,13 @@ var {constructCellAndClusterMatrix} = require("./secondStage/MatrixConstruction"
 
 function secondstage() {
   Excel.run(async function(context) {
+    console.log("----- second stage -----")
     /**
      * feature extraction
      * include: cell address(x), label(x), alliance(x), table(x), cell array membership(x), gap template(x)
      */
-    var featureExtract = new FeatureExtraction(finalFirstClusters, formulaCells, numberCells, stringCells)
+    
+    var featureExtract = new FeatureExtraction(sheetWrapper, rowBase, columnBase, finalFirstClusters, formulaCells, numberCells, stringCells)
     var cellAndClusterMatrix = new MatrixConstruction(finalFirstClusters, formulaCells, numberCells)
     
     /**

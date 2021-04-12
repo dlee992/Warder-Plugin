@@ -1,37 +1,24 @@
-module.exports = {FeatureExtraction}
 
-class Table {
-  constructor(left, up, right, bottom) {
-    this.left = left
-    this.up = up
-    this.right = right
-    this.bottom = bottom
-  }
-
-  toString() {
-    return "Table:left" + this.left + "up" + this.up + "right" + this.right + "bottom" + this.bottom
-  }
-
-  
-}
-
-class FeatureExtraction {
-  constructor(finalFirstClusters, formulaCells, numberCells, stringCells) {
+export class FeatureExtraction {
+  constructor(sheetWrapper, rowBase, columnBase, finalFirstClusters, formulaCells, numberCells, stringCells) {
+    this.sheetWrapper = sheetWrapper
+    this.rowBase = rowBase
+    this.columnBase = columnBase
     this.finalFirstClusters = finalFirstClusters
     this.formulaCells = formulaCells
     this.numberCells = numberCells
     this.stringCells = stringCells
 
-    extractCellAddress()
+    this.extractCellAddress()
 
-    extractTable()
-    extractLabel()
+    this.extractTable()
+    this.extractLabel()
 
-    extractAlliance()
+    this.extractAlliance()
 
-    extractCellArray()
+    this.extractCellArray()
 
-    extractGapTemplate()
+    this.extractGapTemplate()
 
   }
 
@@ -61,7 +48,86 @@ class FeatureExtraction {
    * table: means a contiguous cell range, in which, no empty row or column
    */
   extractTable() {
+    /**
+     * breadth-first search
+     * a bug: potential bug
+     * ******--*
+     * *-------*
+     * *--******
+     * but rarely happen, for now, don't handle this case
+     */
+    console.log("  --- extract table start ---")
+    var visitedCells = new Array(this.sheetWrapper.length)
+    for (let rowIndex = 0; rowIndex < this.sheetWrapper.length; rowIndex++) {
+      var row = this.sheetWrapper[rowIndex]
+      visitedCells[rowIndex] = new Array(row.length)
+    }
 
+    var moveRow = [1, 0, -1, 0]
+    var moveCol = [0, 1, 0, -1]
+
+    for (let rowIndex = 0; rowIndex < this.sheetWrapper.length; rowIndex++) {
+      for (let colIndex = 0; colIndex < this.sheetWrapper[rowIndex].length; colIndex++) {
+        if (this.sheetWrapper[rowIndex][colIndex] == undefined || visitedCells[rowIndex][colIndex] == true) continue
+        console.log(rowIndex, colIndex)
+        var cellWrapper = this.sheetWrapper[rowIndex][colIndex]
+        
+        var table = new Table(colIndex, rowIndex, colIndex, rowIndex)
+        console.log(table.toString())
+
+        var queue = []
+        queue.push(cellWrapper)
+        visitedCells[rowIndex][colIndex] = true
+
+        while (queue.length > 0) {
+          console.log("enter again")
+          var firstCellWrapper = queue.shift()
+          var firstCell = firstCellWrapper.excel_cell
+          firstCellWrapper.ft_table = table
+          
+          console.log(queue.length)
+          for (let index = 0; index < 4; index++) {
+            var newRowIndex = firstCell.rowIndex - this.rowBase + moveRow[index]
+            var newColIndex = firstCell.columnIndex - this.columnBase + moveCol[index]
+            console.log(newRowIndex, newColIndex)
+            if (newRowIndex < 0 || newColIndex < 0 || newRowIndex >= this.sheetWrapper.length || newColIndex >= this.sheetWrapper[0].length) continue
+            console.log("go 1")
+            if (visitedCells[newRowIndex][newColIndex] == true) continue
+            console.log("go 2")
+            if (this.sheetWrapper[newRowIndex][newColIndex] !== undefined) {
+              console.log("go 3")
+              queue.push(this.sheetWrapper[newRowIndex][newColIndex])
+              visitedCells[newRowIndex][newColIndex] = true
+              
+              //update table
+              table.up = table.up > newRowIndex? newRowIndex : table.up
+              table.bottom = table.bottom < newRowIndex? newRowIndex : table.bottom
+              table.left = table.left > newColIndex? newColIndex : table.left
+              table.right = table.right < newColIndex? newColIndex : table.right
+              console.log("update", table.toString())
+            }
+          }
+        }
+
+        //change table to real sheet not relative sheet
+        table.up += this.rowBase
+        table.bottom += this.rowBase
+        table.left += this.columnBase
+        table.right += this.columnBase
+      }
+      
+    }
+
+    //debug
+    for (let index = 0; index < this.sheetWrapper.length; index++) {
+      for (let index2 = 0; index2 < this.sheetWrapper[index].length; index2++) {
+        const cellWrapper = this.sheetWrapper[index][index2];
+        if (cellWrapper !== undefined)
+          console.log(cellWrapper.excel_cell.address, cellWrapper.ft_table.toString())
+      }
+    }
+
+    console.log("  --- extract table done ---")    
   }
 
   /**
@@ -76,5 +142,18 @@ class FeatureExtraction {
    */
   extractGapTemplate() {
 
+  }
+}
+
+class Table {
+  constructor(left, up, right, bottom) {
+    this.left = left
+    this.up = up
+    this.right = right
+    this.bottom = bottom
+  }
+
+  toString() {
+    return "Table:(" + this.up + "," + this.left + ")--(" + this.bottom + "," + this.right + ")"
   }
 }
