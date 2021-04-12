@@ -91,8 +91,8 @@ class CellWrapper {
     this.astString = astString
     this.index = index
     this.cellType = cellType
-    this.cellAddressRowStr = "Row" + excel_cell.rowIndex
-    this.cellAddressColumnStr = "Column" + excel_cell.columnIndex
+    this.ft_cellAddressRow = "Row" + excel_cell.rowIndex
+    this.ft_cellAddressColumn = "Column" + excel_cell.columnIndex
   }
 }
 
@@ -142,10 +142,14 @@ function firststage() {
     rowBase = usedRange.rowIndex
     columnBase = usedRange.columnIndex
     
+    var usedRangeFormulas = usedRange.formulas
     for (let rowIndex = usedRange.rowIndex; rowIndex <= lastCell.rowIndex; rowIndex++) {
       sheetWrapper[rowIndex - usedRange.rowIndex] = new Array(lastCell.columnIndex - usedRange.columnIndex + 1)
 
       for (let colIndex = usedRange.columnIndex; colIndex <= lastCell.columnIndex; colIndex++) {
+        // to be optimzed: cell can be empty, then no need to call context.sync()
+        if (usedRangeFormulas[rowIndex - rowBase][colIndex - columnBase] == "") continue
+
         var cell = worksheet.getCell(rowIndex, colIndex)
         cell.load()
         await context.sync()
@@ -173,6 +177,7 @@ function firststage() {
         else if (typeof formula === "string") {
           cellWrapper = new CellWrapper(cell, undefined, undefined, stringCells.length, "string")
           stringCells.push(cellWrapper)
+          //console.log("string", formula)
           sheetWrapper[rowIndex - rowBase][colIndex - columnBase] = cellWrapper
           //console.log(formula)
         }
@@ -316,7 +321,7 @@ function firststage() {
 }
 
 var {FeatureExtraction} = require("./secondStage/FeatureExtraction")
-var {constructCellAndClusterMatrix} = require("./secondStage/MatrixConstruction")
+var {MatrixConstruction} = require("./secondStage/MatrixConstruction")
 
 function secondstage() {
   Excel.run(async function(context) {
@@ -341,7 +346,7 @@ function secondstage() {
 
 
 
-    await context.sync()
+    await context.sync(.then(console.log("----- second stage : end -----")))
   }).catch(function(error) {
     console.log("Error: " + error)
   })

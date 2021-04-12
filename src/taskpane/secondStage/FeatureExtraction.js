@@ -9,7 +9,7 @@ export class FeatureExtraction {
     this.numberCells = numberCells
     this.stringCells = stringCells
 
-    this.extractCellAddress()
+    //this.extractCellAddress()
 
     this.extractTable()
     this.extractLabel()
@@ -27,14 +27,82 @@ export class FeatureExtraction {
    * f2?.: a cell can reference many cells, whether referenced cells are in the same row or column with the cell
    */
   extractCellAddress() {
-    // nothing to do
+    // nothing to do, implement in class CellWrapper
   }
 
   /**
    * label: is header
    */
   extractLabel() {
+    console.log("  --- extract label: start ---")
 
+    for (let rowIndex = 0; rowIndex < this.sheetWrapper.length; rowIndex++) {
+      for (let colIndex = 0; colIndex < this.sheetWrapper[rowIndex].length; colIndex++) {
+        var cellWrapper = this.sheetWrapper[rowIndex][colIndex]
+        if (cellWrapper == undefined || cellWrapper.cellType == "string") continue
+        //console.log(rowIndex, colIndex)
+
+        //find left header in the same row
+        var minus = 1
+        var labelRow = ""
+        var copyRow = false //rewrite: "var copyRow". First time, copyRow is undefined, second time, it is defined!!! 
+        while (colIndex >= minus) {
+          var headerCellWrapper = this.sheetWrapper[rowIndex][colIndex - minus]
+          if (headerCellWrapper == undefined) {
+            if (labelRow !== "") break
+            minus++
+            continue
+          }
+          if (headerCellWrapper.cellType == "formula" || headerCellWrapper.cellType == "number") {
+            if (labelRow !== "") break
+            //console.log("copy", headerCellWrapper.ft_labelRow)
+            cellWrapper.ft_labelRow = headerCellWrapper.ft_labelRow
+            copyRow = true
+            break
+          }
+          //console.log("go 1")
+          if (headerCellWrapper.cellType == "string") {
+            //console.log("string", headerCellWrapper.excel_cell.formulas[0][0])
+            labelRow = headerCellWrapper.excel_cell.formulas[0][0] + "&" + labelRow
+          }
+          minus ++
+        }
+        
+        if (copyRow == false) 
+          cellWrapper.ft_labelRow = labelRow
+        //console.log("go 2")
+        //find up header in the same column, same structure
+        minus = 1
+        var labelColumn = ""
+        var copyColumn = false
+        while (rowIndex >= minus) {
+          var headerCellWrapper = this.sheetWrapper[rowIndex - minus][colIndex]
+          if (headerCellWrapper == undefined) {
+            if (labelColumn !== "") break
+            minus++
+            continue
+          }
+          if (headerCellWrapper.cellType == "formula" || headerCellWrapper.cellType == "number") {
+            if (labelColumn !== "") break
+            cellWrapper.ft_labelColumn = headerCellWrapper.ft_labelColumn
+            copyColumn = true
+            break
+          }
+          //console.log("go 4")
+          if (headerCellWrapper.cellType == "string") {
+            labelColumn = headerCellWrapper.excel_cell.formulas[0][0] + "&" + labelColumn
+          }
+          minus ++
+        }
+        
+        if (copyColumn == false) 
+          cellWrapper.ft_labelColumn = labelColumn
+        //console.log("go 5")
+        //console.log(cellWrapper.ft_labelRow, cellWrapper.ft_labelColumn)
+      }
+    }
+
+    console.log("  --- extract label: end ---")
   }
 
   /**
@@ -56,7 +124,7 @@ export class FeatureExtraction {
      * *--******
      * but rarely happen, for now, don't handle this case
      */
-    console.log("  --- extract table start ---")
+    console.log("  --- extract table: start ---")
     var visitedCells = new Array(this.sheetWrapper.length)
     for (let rowIndex = 0; rowIndex < this.sheetWrapper.length; rowIndex++) {
       var row = this.sheetWrapper[rowIndex]
@@ -69,33 +137,33 @@ export class FeatureExtraction {
     for (let rowIndex = 0; rowIndex < this.sheetWrapper.length; rowIndex++) {
       for (let colIndex = 0; colIndex < this.sheetWrapper[rowIndex].length; colIndex++) {
         if (this.sheetWrapper[rowIndex][colIndex] == undefined || visitedCells[rowIndex][colIndex] == true) continue
-        console.log(rowIndex, colIndex)
+        //console.log(rowIndex, colIndex)
         var cellWrapper = this.sheetWrapper[rowIndex][colIndex]
         
         var table = new Table(colIndex, rowIndex, colIndex, rowIndex)
-        console.log(table.toString())
+        //console.log(table.toString())
 
         var queue = []
         queue.push(cellWrapper)
         visitedCells[rowIndex][colIndex] = true
 
         while (queue.length > 0) {
-          console.log("enter again")
+          //console.log("enter again")
           var firstCellWrapper = queue.shift()
           var firstCell = firstCellWrapper.excel_cell
           firstCellWrapper.ft_table = table
           
-          console.log(queue.length)
+          //console.log(queue.length)
           for (let index = 0; index < 4; index++) {
             var newRowIndex = firstCell.rowIndex - this.rowBase + moveRow[index]
             var newColIndex = firstCell.columnIndex - this.columnBase + moveCol[index]
-            console.log(newRowIndex, newColIndex)
+            //console.log(newRowIndex, newColIndex)
             if (newRowIndex < 0 || newColIndex < 0 || newRowIndex >= this.sheetWrapper.length || newColIndex >= this.sheetWrapper[0].length) continue
-            console.log("go 1")
+            //console.log("go 1")
             if (visitedCells[newRowIndex][newColIndex] == true) continue
-            console.log("go 2")
+            //console.log("go 2")
             if (this.sheetWrapper[newRowIndex][newColIndex] !== undefined) {
-              console.log("go 3")
+              //console.log("go 3")
               queue.push(this.sheetWrapper[newRowIndex][newColIndex])
               visitedCells[newRowIndex][newColIndex] = true
               
@@ -104,7 +172,7 @@ export class FeatureExtraction {
               table.bottom = table.bottom < newRowIndex? newRowIndex : table.bottom
               table.left = table.left > newColIndex? newColIndex : table.left
               table.right = table.right < newColIndex? newColIndex : table.right
-              console.log("update", table.toString())
+              //console.log("update", table.toString())
             }
           }
         }
@@ -119,15 +187,15 @@ export class FeatureExtraction {
     }
 
     //debug
-    for (let index = 0; index < this.sheetWrapper.length; index++) {
-      for (let index2 = 0; index2 < this.sheetWrapper[index].length; index2++) {
-        const cellWrapper = this.sheetWrapper[index][index2];
-        if (cellWrapper !== undefined)
-          console.log(cellWrapper.excel_cell.address, cellWrapper.ft_table.toString())
-      }
-    }
+    //for (let index = 0; index < this.sheetWrapper.length; index++) {
+      //for (let index2 = 0; index2 < this.sheetWrapper[index].length; index2++) {
+        //const cellWrapper = this.sheetWrapper[index][index2];
+        //if (cellWrapper !== undefined)
+          //console.log(cellWrapper.excel_cell.address, cellWrapper.ft_table.toString())
+      //}
+    //}
 
-    console.log("  --- extract table done ---")    
+    console.log("  --- extract table: end ---")    
   }
 
   /**
